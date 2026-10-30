@@ -20,6 +20,8 @@ public class GeminiVoiceInteractionSession extends VoiceInteractionSession {
     @Override
     public void onShow(Bundle args, int showFlags) {
         super.onShow(args, showFlags);
+        android.util.Log.d("GeminiAssist", "onShow flags=" + showFlags
+                + " screenshotFlag=" + ((showFlags & SHOW_WITH_SCREENSHOT) != 0));
         // Drop any stale screenshot from a previous invocation
         AssistantScreenshotHolder.clear();
 
@@ -37,6 +39,8 @@ public class GeminiVoiceInteractionSession extends VoiceInteractionSession {
     @Override
     public void onHandleScreenshot(Bitmap screenshot) {
         super.onHandleScreenshot(screenshot);
+        android.util.Log.d("GeminiAssist", "onHandleScreenshot bitmap=" + (screenshot != null
+                ? screenshot.getWidth() + "x" + screenshot.getHeight() : "null"));
         if (screenshot != null) {
             AssistantScreenshotHolder.set(screenshot);
         }
