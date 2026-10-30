@@ -340,9 +340,37 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
             }
         });
 
+        // Screenshot option exists only in the assistant overlay
+        View btnScreenshot = popupView.findViewById(R.id.btnAttachScreenshot);
+        btnScreenshot.setVisibility(View.VISIBLE);
+        btnScreenshot.setOnClickListener(v -> {
+            popupWindow.dismiss();
+            attachScreenshot();
+        });
+
         popupView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         int popupHeight = popupView.getMeasuredHeight();
         popupWindow.showAsDropDown(anchor, 0, -(anchor.getHeight() + popupHeight + 16));
+    }
+
+    private void attachScreenshot() {
+        android.graphics.Bitmap shot = AssistantScreenshotHolder.get();
+        if (shot == null) {
+            Toast.makeText(this, "No hay captura disponible. Abre el asistente con el botón del sistema sobre la pantalla que quieres capturar.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            File dir = new File(getCacheDir(), "photos");
+            if (!dir.exists()) dir.mkdirs();
+            File file = new File(dir, "Captura_" + System.currentTimeMillis() + ".jpg");
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(file)) {
+                shot.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, fos);
+            }
+            Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", file);
+            handleSelectedFile(uri);
+        } catch (Exception e) {
+            Toast.makeText(this, "Error al adjuntar captura: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void checkAndLaunchCamera() {
