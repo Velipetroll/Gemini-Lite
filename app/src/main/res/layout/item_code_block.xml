@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_code_block"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="12dp">
+
+    <!-- Code Block Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_code_header"
+        android:paddingHorizontal="12dp">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_code"
+            app:tint="@color/gemini_cyan"
+            tools:ignore="ContentDescription" />
+
+        <TextView
+            android:id="@+id/tvCodeLanguage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="CODE"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
+
+        <!-- Copy Code Button -->
+        <LinearLayout
+            android:id="@+id/btnCopyCode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_code_copy_btn"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/ivCopyIcon"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_copy"
+                app:tint="@color/text_secondary"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:id="@+id/tvCopyLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:text="Copiar"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Horizontal Scrolling Code Content -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:overScrollMode="never"
+        android:scrollbars="horizontal">
+
+        <TextView
+            android:id="@+id/tvCodeContent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="12dp"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            android:fontFamily="monospace"
+            android:lineSpacingExtra="3dp"
+            android:textIsSelectable="true" />
+    </HorizontalScrollView>
+
+</LinearLayout>

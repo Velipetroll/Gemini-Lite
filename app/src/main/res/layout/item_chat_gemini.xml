@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp">
+
+    <!-- Gemini Header: Sparkle + Model Name -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <ImageView
+            android:id="@+id/ivGeminiSparkle"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_gemini_sparkle"
+            tools:ignore="ContentDescription" />
+
+        <TextView
+            android:id="@+id/tvGeminiModelBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Gemini"
+            android:textColor="@color/text_hint"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Thinking Pill (Visible while model is reasoning) -->
+    <LinearLayout
+        android:id="@+id/layoutThinking"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_gemini_thinking_pill"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:indeterminateTint="@color/gemini_purple" />
+
+        <TextView
+            android:id="@+id/tvThinkingLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="Pensando (High)..."
+            android:textColor="@color/gemini_cyan"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Dynamic Gemini Content Container (Holds text paragraphs and code block cards) -->
+    <LinearLayout
+        android:id="@+id/containerGeminiContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvGeminiMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:lineSpacingExtra="4dp"
+            android:textIsSelectable="true"
+            android:fontFamily="sans-serif" />
+    </LinearLayout>
+
+    <!-- Action Bar below message (Copy, Thumbs Up, Thumbs Down, Regenerate, Share) -->
+    <LinearLayout
+        android:id="@+id/layoutActions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="12dp"
+        android:visibility="gone">
+
+        <!-- Copy -->
+        <ImageButton
+            android:id="@+id/btnCopy"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_copy"
+            app:tint="@color/text_hint"
+            tools:ignore="ContentDescription" />
+
+        <!-- Like -->
+        <ImageButton
+            android:id="@+id/btnLike"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_thumb_up"
+            app:tint="@color/text_hint"
+            tools:ignore="ContentDescription" />
+
+        <!-- Dislike -->
+        <ImageButton
+            android:id="@+id/btnDislike"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_thumb_down"
+            app:tint="@color/text_hint"
+            tools:ignore="ContentDescription" />
+
+        <!-- Regenerate -->
+        <ImageButton
+            android:id="@+id/btnRegenerate"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_refresh"
+            app:tint="@color/text_hint"
+            tools:ignore="ContentDescription" />
+
+        <!-- Share -->
+        <ImageButton
+            android:id="@+id/btnShare"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_share"
+            app:tint="@color/text_hint"
+            tools:ignore="ContentDescription" />
+    </LinearLayout>
+
+</LinearLayout>

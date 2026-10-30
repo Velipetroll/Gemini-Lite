@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_sheet"
+    android:padding="24dp">
+
+    <!-- Bottom sheet drag handle indicator -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_chip_pill"
+        android:backgroundTint="@color/gemini_outline" />
+
+    <!-- API Key Input Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/api_key_label"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="6dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_suggestion_card"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp">
+
+        <EditText
+            android:id="@+id/etApiKeyInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@null"
+            android:hint="@string/api_key_hint"
+            android:textColorHint="@color/text_hint"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:inputType="textPassword"
+            android:importantForAutofill="no"
+            android:maxLines="1" />
+
+        <!-- Toggle Visibility Button -->
+        <ImageButton
+            android:id="@+id/btnToggleVisibility"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_edit"
+            app:tint="@color/text_hint"
+            tools:ignore="ContentDescription" />
+
+        <!-- Paste Button -->
+        <TextView
+            android:id="@+id/btnPasteKey"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pegar"
+            android:textColor="@color/gemini_blue"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+    <!-- Get Key Free Link -->
+    <TextView
+        android:id="@+id/tvGetApiKeyLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/link_get_api_key"
+        android:textColor="@color/gemini_cyan"
+        android:textSize="12sp"
+        android:layout_marginTop="8dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Test Connection & Status Area -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="14dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTestKey"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_test_connection"
+            android:textColor="@color/text_primary"
+            app:strokeColor="@color/gemini_outline"
+            android:textSize="12sp" />
+
+        <ProgressBar
+            android:id="@+id/pbTesting"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="12dp"
+            android:indeterminateTint="@color/gemini_blue"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvTestStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:maxLines="2"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <!-- Save Button -->
+    <Button
+        android:id="@+id/btnSaveSettings"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="@string/btn_save"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:background="@drawable/bg_button_gradient"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>

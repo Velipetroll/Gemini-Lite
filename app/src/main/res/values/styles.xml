@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.GeminiClone" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">@color/gemini_bg</item>
+        <item name="android:statusBarColor">@color/gemini_bg</item>
+        <item name="android:navigationBarColor">@color/gemini_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="colorPrimary">@color/gemini_blue</item>
+        <item name="colorSecondary">@color/gemini_purple</item>
+        <item name="colorSurface">@color/gemini_surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+    </style>
+
+    <style name="BottomSheetDialogTheme" parent="Theme.Design.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:navigationBarColor">@color/gemini_surface</item>
+    </style>
+
+    <style name="BottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+</resources>

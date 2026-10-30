@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_sheet"
+    android:padding="24dp">
+
+    <!-- Bottom sheet drag handle indicator -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_chip_pill"
+        android:backgroundTint="@color/gemini_outline" />
+
+    <!-- Header: Icon & Title -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_gemini_sparkle"
+            tools:ignore="ContentDescription" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_title"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_subtitle"
+                android:textColor="@color/text_hint"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Model Selector Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Modelo activo de Gemini"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="6dp" />
+
+    <RadioGroup
+        android:id="@+id/rgModels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/rbModel38Flash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Gemini 3.8 Flash (Potente y de alta velocidad)"
+            android:textColor="@color/text_primary"
+            android:buttonTint="@color/gemini_blue"
+            android:textSize="13sp"
+            android:padding="6dp"
+            android:checked="true" />
+
+        <RadioButton
+            android:id="@+id/rbModel35FlashLite"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Gemini 3.5 Flash Lite (Ultraligero y económico)"
+            android:textColor="@color/text_primary"
+            android:buttonTint="@color/gemini_blue"
+            android:textSize="13sp"
+            android:padding="6dp" />
+    </RadioGroup>
+
+    <!-- Potencia / Thinking Level Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Potencia / Razonamiento"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvThinkingSublabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="(Thinking Level)"
+            android:textColor="@color/text_hint"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <RadioGroup
+        android:id="@+id/rgThinkingLevels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/rbThinkingHigh"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="High (Máxima profundidad de análisis)"
+            android:textColor="@color/text_primary"
+            android:buttonTint="@color/gemini_purple"
+            android:textSize="13sp"
+            android:padding="4dp"
+            android:checked="true" />
+
+        <RadioButton
+            android:id="@+id/rbThinkingMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Medium (Equilibrio entre rapidez y razonamiento)"
+            android:textColor="@color/text_primary"
+            android:buttonTint="@color/gemini_purple"
+            android:textSize="13sp"
+            android:padding="4dp" />
+
+        <RadioButton
+            android:id="@+id/rbThinkingLow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Low (Respuesta ágil y concisa)"
+            android:textColor="@color/text_primary"
+            android:buttonTint="@color/gemini_purple"
+            android:textSize="13sp"
+            android:padding="4dp" />
+
+        <RadioButton
+            android:id="@+id/rbThinkingMinimal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Minimal (Ultra bajo consumo - Solo Flash Lite)"
+            android:textColor="@color/text_hint"
+            android:buttonTint="@color/gemini_purple"
+            android:textSize="13sp"
+            android:padding="4dp"
+            android:visibility="gone" />
+    </RadioGroup>
+
+    <!-- Save Button -->
+    <Button
+        android:id="@+id/btnSaveSettings"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="@string/btn_save"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:background="@drawable/bg_button_gradient"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>

@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="36dp"
+    android:height="36dp"
+    android:viewportWidth="36"
+    android:viewportHeight="36">
+
+    <!-- Outer Gradient Circle -->
+    <path
+        android:pathData="M18,0 A18,18 0 1,1 17.99,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="36"
+                android:endY="36"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#4285F4" />
+                <item android:offset="0.4" android:color="#9B51E0" />
+                <item android:offset="0.75" android:color="#FF6B8B" />
+                <item android:offset="1.0" android:color="#59C0F0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Inner Circle Background (leaves 2.5dp border ring) -->
+    <path
+        android:fillColor="#1E1F20"
+        android:pathData="M18,2.5 A15.5,15.5 0 1,1 17.99,2.5 Z" />
+
+    <!-- User icon silhouette -->
+    <path
+        android:fillColor="#E3E3E3"
+        android:pathData="M18,12c1.66,0 3,-1.34 3,-3s-1.34,-3 -3,-3 -3,1.34 -3,3 1.34,3 3,3zm0,2c-2.33,0 -7,1.17 -7,3.5V19h14v-1.5c0,-2.33 -4.67,-3.5 -7,-3.5z" />
+</vector>

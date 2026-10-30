@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gemini</string>
+    <string name="gemini_title">Gemini</string>
+    <string name="gemini_model_default">Gemini 3.8 Flash (High)</string>
+    
+    <string name="greeting_hola">Hola,</string>
+    <string name="greeting_question">¿En qué puedo ayudarte hoy?</string>
+    
+    <string name="prompt_placeholder">Pregúntale a Gemini...</string>
+    <string name="disclaimer">Gemini puede cometer errores. Verifica la información importante.</string>
+    
+    <!-- Suggestions -->
+    <string name="suggestion_1_title">Crear imagen</string>
+    <string name="suggestion_1_desc">Genera conceptos e ilustraciones</string>
+    <string name="suggestion_1_prompt">Crea una ilustración futurista de una ciudad flotante en el atardecer con estilo neón</string>
+
+    <string name="suggestion_2_title">Escribir un texto</string>
+    <string name="suggestion_2_desc">Redacta correos, historias o resúmenes</string>
+    <string name="suggestion_2_prompt">Escribe un correo formal y persuasivo solicitando colaboración en un proyecto tecnológico</string>
+
+    <string name="suggestion_3_title">Planear una idea</string>
+    <string name="suggestion_3_desc">Estructura proyectos, viajes y metas</string>
+    <string name="suggestion_3_prompt">Planifica un itinerario de 5 días para visitar Japón con un enfoque en cultura y gastronomía</string>
+
+    <string name="suggestion_4_title">Explicar código</string>
+    <string name="suggestion_4_desc">Depura errores y optimiza algoritmos</string>
+    <string name="suggestion_4_prompt">Explica cómo funciona el algoritmo de búsqueda A* en C++ con un ejemplo práctico</string>
+
+    <!-- Settings Dialog -->
+    <string name="settings_title">Configuración de Gemini</string>
+    <string name="settings_subtitle">Ingresa tu API Key de Google AI Studio para usar Gemini directamente.</string>
+    <string name="api_key_label">Google AI API Key</string>
+    <string name="api_key_hint">AIzaSy...</string>
+    <string name="btn_test_connection">Probar Conexión</string>
+    <string name="btn_save">Guardar</string>
+    <string name="link_get_api_key">Obtener API Key gratis en Google AI Studio</string>
+</resources>

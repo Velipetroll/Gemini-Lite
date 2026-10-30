@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Gemini Dark Palette -->
+    <color name="gemini_bg">#131314</color>
+    <color name="gemini_surface">#1E1F20</color>
+    <color name="gemini_surface_high">#282A2C</color>
+    <color name="gemini_surface_variant">#2E3033</color>
+    <color name="gemini_outline">#333538</color>
+    <color name="gemini_outline_variant">#444746</color>
+
+    <!-- Gemini Gradient Colors -->
+    <color name="gemini_blue">#4285F4</color>
+    <color name="gemini_purple">#9B51E0</color>
+    <color name="gemini_pink">#FF6B8B</color>
+    <color name="gemini_cyan">#59C0F0</color>
+
+    <!-- Typography -->
+    <color name="text_primary">#E3E3E3</color>
+    <color name="text_secondary">#C4C7C5</color>
+    <color name="text_hint">#8E918F</color>
+    <color name="text_disabled">#5E6160</color>
+
+    <!-- Status Colors -->
+    <color name="status_connected">#34A853</color>
+    <color name="status_error">#EA4335</color>
+    <color name="status_warning">#FBBC04</color>
+</resources>
