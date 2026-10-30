@@ -2,10 +2,12 @@
 <resources>
     <style name="Theme.GeminiClone" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowBackground">@color/gemini_bg</item>
-        <item name="android:statusBarColor">@color/gemini_bg</item>
-        <item name="android:navigationBarColor">@color/gemini_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <item name="colorPrimary">@color/gemini_blue</item>
         <item name="colorSecondary">@color/gemini_purple</item>
         <item name="colorSurface">@color/gemini_surface</item>

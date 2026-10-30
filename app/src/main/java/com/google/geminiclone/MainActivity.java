@@ -17,6 +17,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -103,6 +104,14 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Edge-to-edge full screen extending under notch cutout and nav bar
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            getWindow().getAttributes().layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
+
         setContentView(R.layout.activity_main);
 
         apiKeyManager = new ApiKeyManager(this);
@@ -299,6 +308,19 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         btnRemoveAttachment = findViewById(R.id.btnRemoveAttachment);
 
         updateModelNameDisplay();
+
+        // Apply top window insets (notch / status bar) to topBar padding
+        View topBar = findViewById(R.id.topBar);
+        if (topBar != null) {
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(topBar, (v, insets) -> {
+                androidx.core.graphics.Insets statusBarInsets = insets.getInsets(
+                        androidx.core.view.WindowInsetsCompat.Type.statusBars() |
+                        androidx.core.view.WindowInsetsCompat.Type.displayCutout()
+                );
+                v.setPadding(v.getPaddingLeft(), statusBarInsets.top, v.getPaddingRight(), v.getPaddingBottom());
+                return insets;
+            });
+        }
     }
 
     private void setupRecyclerView() {

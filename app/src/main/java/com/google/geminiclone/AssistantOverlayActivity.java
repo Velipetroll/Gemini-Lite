@@ -90,11 +90,16 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_assistant_overlay);
 
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         Window window = getWindow();
         if (window != null) {
             window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
             window.setGravity(Gravity.BOTTOM);
             window.setBackgroundDrawableResource(android.R.color.transparent);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                window.getAttributes().layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            }
         }
 
         apiKeyManager = new ApiKeyManager(this);
@@ -106,6 +111,35 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
         setupSpeechRecognizer();
         setupRecyclerView();
         setupListeners();
+        setupKeyboardInsets();
+    }
+
+    private void setupKeyboardInsets() {
+        View bubbleContainer = findViewById(R.id.assistantSheetContainer);
+        if (bubbleContainer == null) return;
+
+        final int baseMarginBottomPx = (int) (18 * getResources().getDisplayMetrics().density);
+
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.assistantRoot), (v, insets) -> {
+            androidx.core.graphics.Insets imeInsets = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.ime()
+            );
+            androidx.core.graphics.Insets navBarInsets = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.navigationBars()
+            );
+
+            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) bubbleContainer.getLayoutParams();
+            if (lp != null) {
+                // If keyboard is visible, raise above keyboard + margin, otherwise stay above navigation bar + margin
+                if (imeInsets.bottom > 0) {
+                    lp.bottomMargin = imeInsets.bottom + baseMarginBottomPx;
+                } else {
+                    lp.bottomMargin = navBarInsets.bottom + baseMarginBottomPx;
+                }
+                bubbleContainer.setLayoutParams(lp);
+            }
+            return insets;
+        });
     }
 
     @Override
