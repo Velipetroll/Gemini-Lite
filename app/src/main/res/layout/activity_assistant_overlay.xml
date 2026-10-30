@@ -14,23 +14,19 @@
         android:layout_height="match_parent"
         android:background="#66000000" />
 
-    <!-- Bottom Sheet Container Floating Overlay -->
+    <!-- Bottom Floating Bubble Container Overlay -->
     <LinearLayout
         android:id="@+id/assistantSheetContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:layout_marginHorizontal="14dp"
+        android:layout_marginBottom="18dp"
         android:orientation="vertical"
-        android:background="@drawable/bg_assistant_sheet"
-        android:elevation="16dp"
+        android:background="@drawable/bg_assistant_floating_card"
+        android:elevation="18dp"
         android:clickable="true"
         android:focusable="true">
-
-        <!-- Top Glowing Border Gradient Strip (Gemini aesthetic) -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="3dp"
-            android:background="@drawable/bg_assistant_glow_border" />
 
         <!-- Header Bar with Drag Handle & Actions -->
         <LinearLayout

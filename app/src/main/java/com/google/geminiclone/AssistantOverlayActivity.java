@@ -108,6 +108,12 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
         setupListeners();
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+    }
+
     private void initViews() {
         rvAssistantMessages = findViewById(R.id.rvAssistantMessages);
         etAssistantPromptInput = findViewById(R.id.etAssistantPromptInput);

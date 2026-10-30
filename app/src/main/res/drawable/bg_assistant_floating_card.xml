@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer full border with Google Gemini gradient following all corners -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="26dp" />
+            <gradient
+                android:startColor="#4285F4"
+                android:centerColor="#9B51E0"
+                android:endColor="#FF6B8B"
+                android:angle="0" />
+        </shape>
+    </item>
+
+    <!-- Inner dark card container leaving 2dp glowing gradient border ring -->
+    <item
+        android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#1E1F20" />
+        </shape>
+    </item>
+</layer-list>
