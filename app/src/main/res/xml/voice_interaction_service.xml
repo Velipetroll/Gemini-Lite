@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sessionService="com.google.geminiclone.GeminiVoiceInteractionSessionService"
+    android:recognitionService="com.google.geminiclone.GeminiRecognitionService"
+    android:supportsAssist="true" />

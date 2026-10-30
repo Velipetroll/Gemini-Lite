@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/assistantRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <!-- Outside Scrim click to dismiss -->
+    <View
+        android:id="@+id/viewScrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#66000000" />
+
+    <!-- Bottom Sheet Container Floating Overlay -->
+    <LinearLayout
+        android:id="@+id/assistantSheetContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="@drawable/bg_assistant_sheet"
+        android:elevation="16dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <!-- Top Glowing Border Gradient Strip (Gemini aesthetic) -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="@drawable/bg_assistant_glow_border" />
+
+        <!-- Header Bar with Drag Handle & Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="8dp">
+
+            <!-- Gemini Sparkle Icon & Title -->
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_gemini_sparkle"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:id="@+id/tvAssistantTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Gemini"
+                android:textColor="@color/text_primary"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <!-- Drag Handle Bar in center -->
+            <View
+                android:layout_width="36dp"
+                android:layout_height="4dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/bg_sheet_handle" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Open in Full Main App Button -->
+            <FrameLayout
+                android:id="@+id/btnOpenFullApp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_open_in_full"
+                    app:tint="@color/text_secondary"
+                    tools:ignore="ContentDescription" />
+            </FrameLayout>
+
+            <!-- Close Overlay Button -->
+            <FrameLayout
+                android:id="@+id/btnCloseAssistant"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/text_secondary"
+                    tools:ignore="ContentDescription" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Messages Area (Shows recent exchanges in this quick session) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAssistantMessages"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:overScrollMode="never"
+            android:visibility="gone" />
+
+        <!-- Quick Suggestions row before first message -->
+        <HorizontalScrollView
+            android:id="@+id/scrollSuggestions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:overScrollMode="never"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/chipSuggest1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_suggestion_card"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:text="¿Qué hay de nuevo hoy?"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/chipSuggest2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_suggestion_card"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:text="Explica un concepto rápido"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/chipSuggest3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_suggestion_card"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:text="Escribe un mensaje"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <!-- Attachment Preview Bar (shown when file/photo is attached) -->
+        <LinearLayout
+            android:id="@+id/layoutAssistantAttachmentPreview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_suggestion_card"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="6dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="6dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/ivAssistantPreviewThumb"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_file"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:id="@+id/tvAssistantPreviewName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="6dp"
+                android:maxWidth="160dp"
+                android:singleLine="true"
+                android:ellipsize="middle"
+                android:text="archivo.png"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+
+            <FrameLayout
+                android:id="@+id/btnAssistantRemoveAttachment"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/bg_circle_btn"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/text_secondary"
+                    tools:ignore="ContentDescription" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Floating Prompt Input Pill Bar -->
+        <LinearLayout
+            android:id="@+id/inputAssistantPill"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginHorizontal="14dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_pill_input"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp">
+
+            <!-- Plus / Attach Button -->
+            <FrameLayout
+                android:id="@+id/btnAssistantAddAttachment"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_circle_btn"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_add"
+                    app:tint="@color/text_primary"
+                    tools:ignore="ContentDescription" />
+            </FrameLayout>
+
+            <!-- Text Input Field -->
+            <EditText
+                android:id="@+id/etAssistantPromptInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="8dp"
+                android:background="@null"
+                android:hint="@string/prompt_placeholder"
+                android:textColorHint="@color/text_hint"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:maxLines="4"
+                android:inputType="textCapSentences|textMultiLine"
+                android:importantForAutofill="no" />
+
+            <!-- Microphone Button -->
+            <FrameLayout
+                android:id="@+id/btnAssistantMic"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_mic"
+                    app:tint="@color/text_secondary"
+                    tools:ignore="ContentDescription" />
+            </FrameLayout>
+
+            <!-- Action Button: Send / Sparkle / Stop -->
+            <FrameLayout
+                android:id="@+id/btnAssistantSend"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/ivAssistantSendIcon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_gemini_sparkle"
+                    tools:ignore="ContentDescription" />
+            </FrameLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

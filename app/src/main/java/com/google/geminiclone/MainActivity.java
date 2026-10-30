@@ -117,6 +117,31 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         setupDrawer();
         setupListeners();
         updateStatusBadge();
+        handleIncomingIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIncomingIntent(intent);
+    }
+
+    private void handleIncomingIntent(Intent intent) {
+        if (intent != null && intent.hasExtra("open_chat_id")) {
+            String targetId = intent.getStringExtra("open_chat_id");
+            if (targetId != null) {
+                currentChatId = targetId;
+                chatMessages.clear();
+                chatMessages.addAll(dbHelper.getMessagesForChat(currentChatId));
+                chatAdapter.notifyDataSetChanged();
+                loadChatSessions();
+                transitionToChat();
+                if (!chatMessages.isEmpty()) {
+                    rvChatMessages.scrollToPosition(chatMessages.size() - 1);
+                }
+            }
+        }
     }
 
     private void setupFilePicker() {
