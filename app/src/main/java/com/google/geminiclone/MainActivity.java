@@ -86,6 +86,8 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
     private String pendingAttachmentMime = null;
     private String pendingAttachmentName = null;
     private String pendingAttachmentBase64 = null;
+    private String activeChatAttachmentBase64 = null;
+    private String activeChatAttachmentMime = null;
     private ActivityResultLauncher<String> filePickerLauncher;
 
     // Camera State & Launcher
@@ -141,6 +143,8 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
             String targetId = intent.getStringExtra("open_chat_id");
             if (targetId != null) {
                 currentChatId = targetId;
+                activeChatAttachmentBase64 = null;
+                activeChatAttachmentMime = null;
                 chatMessages.clear();
                 chatMessages.addAll(dbHelper.getMessagesForChat(currentChatId));
                 chatAdapter.notifyDataSetChanged();
@@ -309,15 +313,42 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
 
         updateModelNameDisplay();
 
-        // Apply top window insets (notch / status bar) to topBar padding
+        // Apply window insets (status bar / notch at top, navigation bar / keyboard at bottom)
+        // while preserving original XML paddings so top/bottom elements stay at their exact design positions
+        View uiContainer = findViewById(R.id.uiContainer);
         View topBar = findViewById(R.id.topBar);
-        if (topBar != null) {
-            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(topBar, (v, insets) -> {
-                androidx.core.graphics.Insets statusBarInsets = insets.getInsets(
+        View navDrawer = findViewById(R.id.navigationDrawer);
+        final int topBarInitialTop = (topBar != null) ? topBar.getPaddingTop() : 0;
+
+        if (uiContainer != null) {
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(uiContainer, (v, insets) -> {
+                androidx.core.graphics.Insets topInsets = insets.getInsets(
                         androidx.core.view.WindowInsetsCompat.Type.statusBars() |
                         androidx.core.view.WindowInsetsCompat.Type.displayCutout()
                 );
-                v.setPadding(v.getPaddingLeft(), statusBarInsets.top, v.getPaddingRight(), v.getPaddingBottom());
+                androidx.core.graphics.Insets navInsets = insets.getInsets(
+                        androidx.core.view.WindowInsetsCompat.Type.navigationBars()
+                );
+                androidx.core.graphics.Insets imeInsets = insets.getInsets(
+                        androidx.core.view.WindowInsetsCompat.Type.ime()
+                );
+
+                if (topBar != null) {
+                    topBar.setPadding(
+                            topBar.getPaddingLeft(),
+                            topBarInitialTop + topInsets.top,
+                            topBar.getPaddingRight(),
+                            topBar.getPaddingBottom()
+                    );
+                }
+
+                int bottomInset = Math.max(navInsets.bottom, imeInsets.bottom);
+                v.setPadding(v.getPaddingLeft(), 0, v.getPaddingRight(), bottomInset);
+
+                if (navDrawer != null) {
+                    navDrawer.setPadding(0, topInsets.top, 0, navInsets.bottom);
+                }
+
                 return insets;
             });
         }
@@ -328,6 +359,8 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
         rvChatMessages.setLayoutManager(layoutManager);
+        rvChatMessages.setHasFixedSize(true);
+        rvChatMessages.setItemViewCacheSize(12);
         rvChatMessages.setItemAnimator(null); // Eliminates cross-fade flicker and text superimposition
         rvChatMessages.setAdapter(chatAdapter);
     }
@@ -350,7 +383,32 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         });
 
         rvChatHistory.setLayoutManager(new LinearLayoutManager(this));
+        rvChatHistory.setHasFixedSize(true);
         rvChatHistory.setAdapter(historyAdapter);
+
+        drawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
+            @Override
+            public void onDrawerOpened(View drawerView) {
+                if (glSurfaceView != null) {
+                    glSurfaceView.setRenderMode(android.opengl.GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+                }
+            }
+
+            @Override
+            public void onDrawerSlide(View drawerView, float slideOffset) {
+                if (glSurfaceView != null && slideOffset < 0.98f &&
+                        glSurfaceView.getRenderMode() != android.opengl.GLSurfaceView.RENDERMODE_CONTINUOUSLY) {
+                    glSurfaceView.setRenderMode(android.opengl.GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+                }
+            }
+
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                if (glSurfaceView != null) {
+                    glSurfaceView.setRenderMode(android.opengl.GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+                }
+            }
+        });
 
         findViewById(R.id.btnOpenDrawer).setOnClickListener(v ->
                 drawerLayout.openDrawer(GravityCompat.START)
@@ -385,6 +443,8 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         }
 
         currentChatId = session.getId();
+        activeChatAttachmentBase64 = null;
+        activeChatAttachmentMime = null;
         historyAdapter.setSelectedChatId(currentChatId);
 
         chatMessages.clear();
@@ -615,14 +675,46 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         full.start();
     }
 
+    private static String resolveMimeType(String rawMime, String displayName, byte[] data) {
+        if (data != null && data.length >= 12) {
+            if ((data[0] & 0xFF) == 0xFF && (data[1] & 0xFF) == 0xD8 && (data[2] & 0xFF) == 0xFF) {
+                return "image/jpeg";
+            }
+            if ((data[0] & 0xFF) == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47) {
+                return "image/png";
+            }
+            if (data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F' &&
+                    data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P') {
+                return "image/webp";
+            }
+            if (data[0] == 'G' && data[1] == 'I' && data[2] == 'F' && data[3] == '8') {
+                return "image/gif";
+            }
+            if (data[0] == '%' && data[1] == 'P' && data[2] == 'D' && data[3] == 'F') {
+                return "application/pdf";
+            }
+        }
+        if (rawMime == null || rawMime.isEmpty() ||
+                "application/octet-stream".equals(rawMime) ||
+                "image/*".equals(rawMime) || "*/*".equals(rawMime)) {
+            if (displayName != null) {
+                String lower = displayName.toLowerCase();
+                if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+                if (lower.endsWith(".png")) return "image/png";
+                if (lower.endsWith(".webp")) return "image/webp";
+                if (lower.endsWith(".gif")) return "image/gif";
+                if (lower.endsWith(".pdf")) return "application/pdf";
+            }
+            return "image/jpeg";
+        }
+        return rawMime;
+    }
+
     private void handleSelectedFile(Uri uri) {
         if (uri == null) return;
         try {
             pendingAttachmentUri = uri;
-            pendingAttachmentMime = getContentResolver().getType(uri);
-            if (pendingAttachmentMime == null) {
-                pendingAttachmentMime = "application/octet-stream";
-            }
+            String rawMime = getContentResolver().getType(uri);
 
             // Extract file display name
             String displayName = "Archivo";
@@ -637,6 +729,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
             pendingAttachmentName = displayName;
 
             // Read file into Base64 (limit to 10MB to avoid OOM)
+            byte[] rawBytes;
             try (InputStream is = getContentResolver().openInputStream(uri);
                  ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
                 byte[] buffer = new byte[8192];
@@ -651,14 +744,17 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
                     }
                     baos.write(buffer, 0, len);
                 }
-                pendingAttachmentBase64 = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
+                rawBytes = baos.toByteArray();
+                pendingAttachmentBase64 = Base64.encodeToString(rawBytes, Base64.NO_WRAP);
             }
+
+            pendingAttachmentMime = resolveMimeType(rawMime, displayName, rawBytes);
 
             // Update UI preview chip
             layoutAttachmentPreview.setVisibility(View.VISIBLE);
             tvPreviewName.setText(pendingAttachmentName);
             if (pendingAttachmentMime.startsWith("image/")) {
-                ivPreviewThumb.setImageURI(uri);
+                ImageThumbnailCache.loadInto(this, uri, ivPreviewThumb, 28, 28);
             } else {
                 ivPreviewThumb.setImageResource(R.drawable.ic_file);
             }
@@ -684,6 +780,52 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
             ivSendIcon.setImageResource(R.drawable.ic_gemini_sparkle);
             ivSendIcon.setImageTintList(null);
         }
+    }
+
+    private void ensureActiveChatAttachmentLoaded(int upToIndex) {
+        if (activeChatAttachmentBase64 != null) return;
+        for (int i = upToIndex - 1; i >= 0; i--) {
+            ChatMessage m = chatMessages.get(i);
+            if (m.hasAttachment() && m.getAttachmentUri() != null) {
+                try (InputStream is = getContentResolver().openInputStream(Uri.parse(m.getAttachmentUri()));
+                     ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    if (is == null) continue;
+                    byte[] buf = new byte[8192];
+                    int len;
+                    while ((len = is.read(buf)) != -1) {
+                        baos.write(buf, 0, len);
+                    }
+                    byte[] bytes = baos.toByteArray();
+                    if (bytes.length > 0) {
+                        activeChatAttachmentBase64 = Base64.encodeToString(bytes, Base64.NO_WRAP);
+                        activeChatAttachmentMime = resolveMimeType(m.getAttachmentMimeType(), m.getAttachmentName(), bytes);
+                        return;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    private String buildContextualPrompt(String currentPrompt, int historyEndExclusive) {
+        if (historyEndExclusive <= 0) {
+            return currentPrompt;
+        }
+        int start = Math.max(0, historyEndExclusive - 6);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Contexto reciente de la conversación:\n");
+        for (int i = start; i < historyEndExclusive; i++) {
+            ChatMessage m = chatMessages.get(i);
+            String txt = m.getText();
+            if ((txt == null || txt.isEmpty()) && m.hasAttachment()) {
+                txt = "[Imagen/archivo adjunto]";
+            }
+            if (txt != null && !txt.isEmpty()) {
+                sb.append(m.isUser() ? "Usuario: " : "Gemini: ").append(txt).append("\n");
+            }
+        }
+        sb.append("\nMensaje actual del usuario: ").append(currentPrompt.isEmpty() ? "Analiza la imagen adjunta." : currentPrompt);
+        return sb.toString();
     }
 
     private void handleSendPrompt() {
@@ -726,6 +868,18 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
 
         // Transition from Hero screen to active chat timeline
         transitionToChat();
+
+        int priorCount = chatMessages.size();
+        if (attachedBase64 != null) {
+            activeChatAttachmentBase64 = attachedBase64;
+            activeChatAttachmentMime = attachedMime;
+        } else {
+            ensureActiveChatAttachmentLoaded(priorCount);
+        }
+
+        String contextualPrompt = (attachedBase64 != null && priorCount == 0)
+                ? prompt
+                : buildContextualPrompt(prompt, priorCount);
 
         // Add user message with attachment
         ChatMessage userMessage = new ChatMessage(prompt, true);
@@ -774,10 +928,13 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
             }
         };
 
-        if (attachedBase64 != null) {
-            apiClient.sendPromptWithFile(apiKey, model, thinkingLevel, prompt, attachedMime, attachedBase64, callback);
+        String effectiveBase64 = (attachedBase64 != null) ? attachedBase64 : activeChatAttachmentBase64;
+        String effectiveMime = (attachedBase64 != null) ? attachedMime : activeChatAttachmentMime;
+
+        if (effectiveBase64 != null) {
+            apiClient.sendPromptWithFile(apiKey, model, thinkingLevel, contextualPrompt, effectiveMime, effectiveBase64, callback);
         } else {
-            apiClient.sendPrompt(apiKey, model, thinkingLevel, prompt, callback);
+            apiClient.sendPrompt(apiKey, model, thinkingLevel, contextualPrompt, callback);
         }
     }
 
@@ -871,6 +1028,8 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
             cancelCurrentGeneration();
         }
         currentChatId = null;
+        activeChatAttachmentBase64 = null;
+        activeChatAttachmentMime = null;
         if (historyAdapter != null) {
             historyAdapter.setSelectedChatId(null);
         }
@@ -890,7 +1049,11 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
     public void onRegenerate(int position) {
         // Find preceding user prompt
         if (position > 0 && chatMessages.get(position - 1).isUser()) {
-            String prompt = chatMessages.get(position - 1).getText();
+            ChatMessage userMsg = chatMessages.get(position - 1);
+            if (userMsg.hasAttachment() && userMsg.getAttachmentUri() != null) {
+                handleSelectedFile(Uri.parse(userMsg.getAttachmentUri()));
+            }
+            String prompt = userMsg.getText();
             etPromptInput.setText(prompt);
             handleSendPrompt();
         }

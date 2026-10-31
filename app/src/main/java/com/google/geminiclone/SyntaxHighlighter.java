@@ -58,12 +58,12 @@ public class SyntaxHighlighter {
     private static final String COMMENTS = "(//.*?$|/\\*[\\s\\S]*?\\*/|#.*?$|--.*?$|<!--[\\s\\S]*?-->)";
 
     private static final Pattern PATTERN_COMBINED = Pattern.compile(
-            "(?<COMMENT>" + COMMENTS + ")"
-            + "|(?<STRING>" + STRINGS + ")"
-            + "|(?<PREPROCESSOR>" + PREPROCESSORS + ")"
-            + "|(?<KEYWORD>" + KEYWORDS + ")"
-            + "|(?<TYPE>" + TYPES + ")"
-            + "|(?<NUMBER>" + NUMBERS + ")",
+            "(" + COMMENTS + ")"
+            + "|(" + STRINGS + ")"
+            + "|(" + PREPROCESSORS + ")"
+            + "|(" + KEYWORDS + ")"
+            + "|(" + TYPES + ")"
+            + "|(" + NUMBERS + ")",
             Pattern.MULTILINE
     );
 
@@ -73,19 +73,19 @@ public class SyntaxHighlighter {
         Matcher matcher = PATTERN_COMBINED.matcher(code);
 
         while (matcher.find()) {
-            if (matcher.group("COMMENT") != null) {
+            if (matcher.group(1) != null) {
                 spannable.setSpan(new ForegroundColorSpan(COLOR_COMMENT), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 spannable.setSpan(new StyleSpan(Typeface.ITALIC), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("STRING") != null) {
+            } else if (matcher.group(3) != null) {
                 spannable.setSpan(new ForegroundColorSpan(COLOR_STRING), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("PREPROCESSOR") != null) {
+            } else if (matcher.group(5) != null) {
                 spannable.setSpan(new ForegroundColorSpan(COLOR_PREPROCESSOR), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("KEYWORD") != null) {
+            } else if (matcher.group(8) != null) {
                 spannable.setSpan(new ForegroundColorSpan(COLOR_KEYWORD), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 spannable.setSpan(new StyleSpan(Typeface.BOLD), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("TYPE") != null) {
+            } else if (matcher.group(10) != null) {
                 spannable.setSpan(new ForegroundColorSpan(COLOR_TYPE), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("NUMBER") != null) {
+            } else if (matcher.group(12) != null) {
                 spannable.setSpan(new ForegroundColorSpan(COLOR_NUMBER), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
         }

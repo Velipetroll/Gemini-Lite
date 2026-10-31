@@ -76,6 +76,8 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
     private String pendingAttachmentMime = null;
     private String pendingAttachmentName = null;
     private String pendingAttachmentBase64 = null;
+    private String activeChatAttachmentBase64 = null;
+    private String activeChatAttachmentMime = null;
     private Uri cameraPhotoUri = null;
 
     private ActivityResultLauncher<String> filePickerLauncher;
@@ -232,6 +234,8 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
         rvAssistantMessages.setLayoutManager(layoutManager);
+        rvAssistantMessages.setHasFixedSize(true);
+        rvAssistantMessages.setItemViewCacheSize(10);
         rvAssistantMessages.setItemAnimator(null);
         rvAssistantMessages.setAdapter(chatAdapter);
     }
@@ -418,14 +422,46 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
         }
     }
 
+    private static String resolveMimeType(String rawMime, String displayName, byte[] data) {
+        if (data != null && data.length >= 12) {
+            if ((data[0] & 0xFF) == 0xFF && (data[1] & 0xFF) == 0xD8 && (data[2] & 0xFF) == 0xFF) {
+                return "image/jpeg";
+            }
+            if ((data[0] & 0xFF) == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47) {
+                return "image/png";
+            }
+            if (data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F' &&
+                    data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P') {
+                return "image/webp";
+            }
+            if (data[0] == 'G' && data[1] == 'I' && data[2] == 'F' && data[3] == '8') {
+                return "image/gif";
+            }
+            if (data[0] == '%' && data[1] == 'P' && data[2] == 'D' && data[3] == 'F') {
+                return "application/pdf";
+            }
+        }
+        if (rawMime == null || rawMime.isEmpty() ||
+                "application/octet-stream".equals(rawMime) ||
+                "image/*".equals(rawMime) || "*/*".equals(rawMime)) {
+            if (displayName != null) {
+                String lower = displayName.toLowerCase();
+                if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+                if (lower.endsWith(".png")) return "image/png";
+                if (lower.endsWith(".webp")) return "image/webp";
+                if (lower.endsWith(".gif")) return "image/gif";
+                if (lower.endsWith(".pdf")) return "application/pdf";
+            }
+            return "image/jpeg";
+        }
+        return rawMime;
+    }
+
     private void handleSelectedFile(Uri uri) {
         if (uri == null) return;
         try {
             pendingAttachmentUri = uri;
-            pendingAttachmentMime = getContentResolver().getType(uri);
-            if (pendingAttachmentMime == null) {
-                pendingAttachmentMime = "application/octet-stream";
-            }
+            String rawMime = getContentResolver().getType(uri);
 
             String displayName = "Archivo";
             try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
@@ -438,6 +474,7 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
             }
             pendingAttachmentName = displayName;
 
+            byte[] rawBytes;
             try (InputStream is = getContentResolver().openInputStream(uri);
                  ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
                 byte[] buffer = new byte[8192];
@@ -452,13 +489,16 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
                     }
                     baos.write(buffer, 0, len);
                 }
-                pendingAttachmentBase64 = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
+                rawBytes = baos.toByteArray();
+                pendingAttachmentBase64 = Base64.encodeToString(rawBytes, Base64.NO_WRAP);
             }
+
+            pendingAttachmentMime = resolveMimeType(rawMime, displayName, rawBytes);
 
             layoutAssistantAttachmentPreview.setVisibility(View.VISIBLE);
             tvAssistantPreviewName.setText(pendingAttachmentName);
             if (pendingAttachmentMime.startsWith("image/")) {
-                ivAssistantPreviewThumb.setImageURI(uri);
+                ImageThumbnailCache.loadInto(this, uri, ivAssistantPreviewThumb, 28, 28);
             } else {
                 ivAssistantPreviewThumb.setImageResource(R.drawable.ic_file);
             }
@@ -484,6 +524,27 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
             ivAssistantSendIcon.setImageResource(R.drawable.ic_gemini_sparkle);
             ivAssistantSendIcon.setImageTintList(null);
         }
+    }
+
+    private String buildContextualPrompt(String currentPrompt, int historyEndExclusive) {
+        if (historyEndExclusive <= 0) {
+            return currentPrompt;
+        }
+        int start = Math.max(0, historyEndExclusive - 6);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Contexto reciente de la conversación:\n");
+        for (int i = start; i < historyEndExclusive; i++) {
+            ChatMessage m = chatMessages.get(i);
+            String txt = m.getText();
+            if ((txt == null || txt.isEmpty()) && m.hasAttachment()) {
+                txt = "[Imagen/archivo adjunto]";
+            }
+            if (txt != null && !txt.isEmpty()) {
+                sb.append(m.isUser() ? "Usuario: " : "Gemini: ").append(txt).append("\n");
+            }
+        }
+        sb.append("\nMensaje actual del usuario: ").append(currentPrompt.isEmpty() ? "Analiza la imagen adjunta." : currentPrompt);
+        return sb.toString();
     }
 
     private void handleSendPrompt() {
@@ -518,6 +579,16 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
             String title = prompt.isEmpty() ? ("Archivo: " + attachedName) : (prompt.length() > 36 ? prompt.substring(0, 34) + "..." : prompt);
             currentChatId = dbHelper.createChat(title);
         }
+
+        int priorCount = chatMessages.size();
+        if (attachedBase64 != null) {
+            activeChatAttachmentBase64 = attachedBase64;
+            activeChatAttachmentMime = attachedMime;
+        }
+
+        String contextualPrompt = (attachedBase64 != null && priorCount == 0)
+                ? prompt
+                : buildContextualPrompt(prompt, priorCount);
 
         // Show recyclerview and adjust height
         scrollSuggestions.setVisibility(View.GONE);
@@ -570,10 +641,13 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
             }
         };
 
-        if (attachedBase64 != null) {
-            apiClient.sendPromptWithFile(apiKey, model, thinkingLevel, prompt, attachedMime, attachedBase64, callback);
+        String effectiveBase64 = (attachedBase64 != null) ? attachedBase64 : activeChatAttachmentBase64;
+        String effectiveMime = (attachedBase64 != null) ? attachedMime : activeChatAttachmentMime;
+
+        if (effectiveBase64 != null) {
+            apiClient.sendPromptWithFile(apiKey, model, thinkingLevel, contextualPrompt, effectiveMime, effectiveBase64, callback);
         } else {
-            apiClient.sendPrompt(apiKey, model, thinkingLevel, prompt, callback);
+            apiClient.sendPrompt(apiKey, model, thinkingLevel, contextualPrompt, callback);
         }
     }
 
@@ -665,6 +739,9 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
         if (position > 0 && position < chatMessages.size()) {
             ChatMessage userMsg = chatMessages.get(position - 1);
             if (userMsg.isUser()) {
+                if (userMsg.hasAttachment() && userMsg.getAttachmentUri() != null) {
+                    handleSelectedFile(Uri.parse(userMsg.getAttachmentUri()));
+                }
                 etAssistantPromptInput.setText(userMsg.getText());
                 handleSendPrompt();
             }

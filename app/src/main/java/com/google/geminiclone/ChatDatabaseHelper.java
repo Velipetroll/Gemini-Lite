@@ -13,7 +13,7 @@ import java.util.UUID;
 public class ChatDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "gemini_chats.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     // Tables
     private static final String TABLE_CHATS = "chats";
@@ -33,6 +33,9 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
     private static final String COL_MSG_THINKING = "thinking_level";
     private static final String COL_MSG_MODEL = "model_name";
     private static final String COL_MSG_TIMESTAMP = "timestamp";
+    private static final String COL_MSG_ATTACH_URI = "attachment_uri";
+    private static final String COL_MSG_ATTACH_MIME = "attachment_mime";
+    private static final String COL_MSG_ATTACH_NAME = "attachment_name";
 
     public ChatDatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -54,14 +57,19 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
                 + COL_MSG_THINKING + " TEXT, "
                 + COL_MSG_MODEL + " TEXT, "
                 + COL_MSG_TIMESTAMP + " INTEGER, "
+                + COL_MSG_ATTACH_URI + " TEXT, "
+                + COL_MSG_ATTACH_MIME + " TEXT, "
+                + COL_MSG_ATTACH_NAME + " TEXT, "
                 + "FOREIGN KEY(" + COL_MSG_CHAT_ID + ") REFERENCES " + TABLE_CHATS + "(" + COL_CHAT_ID + ") ON DELETE CASCADE);");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_MESSAGES);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CHATS);
-        onCreate(db);
+        if (oldVersion < 2) {
+            try { db.execSQL("ALTER TABLE " + TABLE_MESSAGES + " ADD COLUMN " + COL_MSG_ATTACH_URI + " TEXT;"); } catch (Exception ignored) {}
+            try { db.execSQL("ALTER TABLE " + TABLE_MESSAGES + " ADD COLUMN " + COL_MSG_ATTACH_MIME + " TEXT;"); } catch (Exception ignored) {}
+            try { db.execSQL("ALTER TABLE " + TABLE_MESSAGES + " ADD COLUMN " + COL_MSG_ATTACH_NAME + " TEXT;"); } catch (Exception ignored) {}
+        }
     }
 
     public String createChat(String title) {
@@ -103,6 +111,9 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
         cv.put(COL_MSG_THINKING, message.getThinkingLevel());
         cv.put(COL_MSG_MODEL, message.getModelName());
         cv.put(COL_MSG_TIMESTAMP, message.getTimestamp());
+        cv.put(COL_MSG_ATTACH_URI, message.getAttachmentUri());
+        cv.put(COL_MSG_ATTACH_MIME, message.getAttachmentMimeType());
+        cv.put(COL_MSG_ATTACH_NAME, message.getAttachmentName());
 
         db.insert(TABLE_MESSAGES, null, cv);
         touchChat(chatId);
@@ -145,12 +156,24 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.query(TABLE_MESSAGES, null, COL_MSG_CHAT_ID + "=?", new String[]{chatId}, null, null, COL_MSG_ID + " ASC");
 
         if (cursor != null) {
+            int idxAttachUri = cursor.getColumnIndex(COL_MSG_ATTACH_URI);
+            int idxAttachMime = cursor.getColumnIndex(COL_MSG_ATTACH_MIME);
+            int idxAttachName = cursor.getColumnIndex(COL_MSG_ATTACH_NAME);
             while (cursor.moveToNext()) {
                 String text = cursor.getString(cursor.getColumnIndexOrThrow(COL_MSG_TEXT));
                 boolean isUser = cursor.getInt(cursor.getColumnIndexOrThrow(COL_MSG_IS_USER)) == 1;
                 String thinking = cursor.getString(cursor.getColumnIndexOrThrow(COL_MSG_THINKING));
                 String model = cursor.getString(cursor.getColumnIndexOrThrow(COL_MSG_MODEL));
-                list.add(new ChatMessage(text, isUser, false, thinking, model));
+                ChatMessage msg = new ChatMessage(text, isUser, false, thinking, model);
+                if (idxAttachUri >= 0) {
+                    String attachUri = cursor.getString(idxAttachUri);
+                    if (attachUri != null && !attachUri.isEmpty()) {
+                        msg.setAttachmentUri(attachUri);
+                        if (idxAttachMime >= 0) msg.setAttachmentMimeType(cursor.getString(idxAttachMime));
+                        if (idxAttachName >= 0) msg.setAttachmentName(cursor.getString(idxAttachName));
+                    }
+                }
+                list.add(msg);
             }
             cursor.close();
         }

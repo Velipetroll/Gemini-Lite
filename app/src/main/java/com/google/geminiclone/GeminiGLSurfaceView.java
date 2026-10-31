@@ -1,6 +1,7 @@
 package com.google.geminiclone;
 
 import android.content.Context;
+import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -12,9 +13,12 @@ public class GeminiGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
 
     private long lastFrameTimeNs = 0;
     private float animatedTimeSec = 0.0f;
-    private float touchX = 0.0f;
-    private float touchY = 0.0f;
-    private float touchPressure = 0.0f;
+    private volatile float touchX = 0.0f;
+    private volatile float touchY = 0.0f;
+    private volatile float touchPressure = 0.0f;
+    private int surfaceWidth = 0;
+    private int surfaceHeight = 0;
+    private boolean contextCreated = false;
 
     public GeminiGLSurfaceView(Context context) {
         super(context);
@@ -27,7 +31,10 @@ public class GeminiGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
     }
 
     private void init() {
-        setEGLContextClientVersion(3);
+        setEGLContextClientVersion(2);
+        // Official RGB888 config with needDepth=false (0 depth, 0 stencil): eliminates depth buffer VRAM & tile bandwidth safely on all GPUs
+        setEGLConfigChooser(false);
+        setPreserveEGLContextOnPause(true);
         setRenderer(this);
         setRenderMode(RENDERMODE_CONTINUOUSLY);
         lastFrameTimeNs = 0;
@@ -44,11 +51,12 @@ public class GeminiGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         lastFrameTimeNs = 0;
+        contextCreated = true;
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        // Enforce 0.65x hardware buffer scaling: saves 60% fill rate on Adreno GPU
+        // Enforce 0.65x hardware buffer scaling: saves 58% fill rate while hardware bilinear filter keeps nebula/star crisp
         if (width > 800) {
             int scaledW = (int) (width * 0.65f);
             int scaledH = (int) (height * 0.65f);
@@ -56,15 +64,21 @@ public class GeminiGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
             return;
         }
 
-        GeminiNative.init(width, height);
-        GeminiNative.resize(width, height);
+        surfaceWidth = width;
+        surfaceHeight = height;
+        if (contextCreated) {
+            GeminiNative.init(width, height);
+            contextCreated = false;
+        } else {
+            GeminiNative.resize(width, height);
+        }
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
         long nowNs = System.nanoTime();
         if (lastFrameTimeNs > 0) {
-            float deltaSec = (nowNs - lastFrameTimeNs) / 1_000_000_000.0f;
+            float deltaSec = (nowNs - lastFrameTimeNs) * 1e-9f;
             // Clamp delta on resume/sleep to prevent sudden animation jumps or stutter
             if (deltaSec > 0.05f) {
                 deltaSec = 0.01666f;
@@ -104,9 +118,16 @@ public class GeminiGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_MOVE:
-                float scale = (getWidth() > 800) ? 0.65f : 1.0f;
-                touchX = event.getX() * scale;
-                touchY = (getHeight() - event.getY()) * scale;
+                int vw = getWidth();
+                int vh = getHeight();
+                if (vw > 0 && vh > 0 && surfaceWidth > 0 && surfaceHeight > 0) {
+                    touchX = event.getX() * ((float) surfaceWidth / vw);
+                    touchY = (vh - event.getY()) * ((float) surfaceHeight / vh);
+                } else {
+                    float scale = (vw > 800) ? 0.65f : 1.0f;
+                    touchX = event.getX() * scale;
+                    touchY = (vh - event.getY()) * scale;
+                }
                 touchPressure = 1.0f;
                 break;
             case MotionEvent.ACTION_UP:

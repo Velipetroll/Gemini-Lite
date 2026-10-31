@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Gemini</string>
-    <string name="gemini_title">Gemini</string>
+    <string name="app_name">Gemini Lite</string>
+    <string name="gemini_title">Gemini Lite</string>
     <string name="gemini_model_default">Gemini 3.8 Flash (High)</string>
     
     <string name="greeting_hola">Hola,</string>

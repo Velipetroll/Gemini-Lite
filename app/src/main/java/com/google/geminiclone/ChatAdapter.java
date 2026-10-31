@@ -82,6 +82,14 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return messages.size();
     }
 
+    @Override
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewRecycled(holder);
+        if (holder instanceof GeminiViewHolder) {
+            ((GeminiViewHolder) holder).stopSparkleAnimation();
+        }
+    }
+
     // --- User ViewHolder ---
     static class UserViewHolder extends RecyclerView.ViewHolder {
         TextView tvUserMessage;
@@ -105,7 +113,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     layoutUserFile.setVisibility(View.GONE);
                     try {
                         android.net.Uri uri = android.net.Uri.parse(message.getAttachmentUri());
-                        ivUserAttachment.setImageURI(uri);
+                        ImageThumbnailCache.loadInto(itemView.getContext(), uri, ivUserAttachment, 220, 160);
                     } catch (Exception e) {
                         ivUserAttachment.setImageResource(R.drawable.ic_image);
                     }
@@ -122,7 +130,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             if (message.getText() != null && !message.getText().trim().isEmpty()) {
                 tvUserMessage.setVisibility(View.VISIBLE);
-                tvUserMessage.setText(MarkdownParser.parseMarkdownText(message.getText()));
+                tvUserMessage.setText(message.getParsedMarkdownText());
             } else {
                 tvUserMessage.setVisibility(View.GONE);
             }
@@ -164,10 +172,10 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 layoutThinking.setVisibility(View.GONE);
                 stopSparkleAnimation();
             }
-            GeminiMessageRenderer.render(context, containerGeminiContent, tvGeminiMessage, message.getText());
+            GeminiMessageRenderer.render(context, containerGeminiContent, tvGeminiMessage, message);
         }
 
-        private void stopSparkleAnimation() {
+        void stopSparkleAnimation() {
             if (pulseAnimator != null) {
                 pulseAnimator.cancel();
                 pulseAnimator = null;
@@ -196,13 +204,13 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 }
 
                 layoutActions.setVisibility(View.GONE);
-                GeminiMessageRenderer.render(context, containerGeminiContent, tvGeminiMessage, message.getText());
+                GeminiMessageRenderer.render(context, containerGeminiContent, tvGeminiMessage, message);
             } else {
                 layoutThinking.setVisibility(View.GONE);
                 stopSparkleAnimation();
                 layoutActions.setVisibility(View.VISIBLE);
 
-                GeminiMessageRenderer.render(context, containerGeminiContent, tvGeminiMessage, message.getText());
+                GeminiMessageRenderer.render(context, containerGeminiContent, tvGeminiMessage, message);
             }
 
             // Action Listeners

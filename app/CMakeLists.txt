@@ -14,7 +14,7 @@ add_library(
 
 find_library(log-lib log)
 find_library(android-lib android)
-find_library(gles-lib GLESv3)
+find_library(gles-lib GLESv2)
 find_library(egl-lib EGL)
 
 target_link_libraries(

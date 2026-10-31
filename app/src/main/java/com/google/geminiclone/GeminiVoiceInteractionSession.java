@@ -13,8 +13,11 @@ public class GeminiVoiceInteractionSession extends VoiceInteractionSession {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable delayedHide = this::hide;
 
+    private final Context appCtx;
+
     public GeminiVoiceInteractionSession(Context context) {
         super(context);
+        appCtx = context;
     }
 
     @Override
@@ -26,10 +29,10 @@ public class GeminiVoiceInteractionSession extends VoiceInteractionSession {
         AssistantScreenshotHolder.clear();
 
         // Launch the floating AssistantOverlayActivity when the assistant key/gesture is triggered
-        Intent intent = new Intent(getContext(), AssistantOverlayActivity.class);
+        Intent intent = new Intent(appCtx, AssistantOverlayActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         intent.putExtra("trigger_source", "voice_assistant_session");
-        getContext().startActivity(intent);
+        appCtx.startActivity(intent);
 
         // Keep the session alive briefly so the system can deliver the screenshot
         handler.removeCallbacks(delayedHide);

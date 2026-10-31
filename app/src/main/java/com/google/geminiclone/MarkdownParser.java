@@ -22,12 +22,14 @@ public class MarkdownParser {
         public final boolean isCode;
         public final String language;
         public final String code;
+        public final CharSequence highlightedCode;
         public final CharSequence formattedText;
 
         public MessageBlock(String language, String code) {
             this.isCode = true;
             this.language = (language != null && !language.trim().isEmpty()) ? language.trim() : "CODE";
             this.code = code != null ? code : "";
+            this.highlightedCode = SyntaxHighlighter.highlight(this.code);
             this.formattedText = null;
         }
 
@@ -35,6 +37,7 @@ public class MarkdownParser {
             this.isCode = false;
             this.language = null;
             this.code = null;
+            this.highlightedCode = null;
             this.formattedText = formattedText;
         }
     }
@@ -71,13 +74,13 @@ public class MarkdownParser {
 
     // Inline styles: `code`, ***bold-italic***, **bold**, __bold__, *italic*, _italic_, ~~strike~~
     private static final Pattern INLINE_PATTERN = Pattern.compile(
-            "(`(?<code>[^`\\n]+)`)"
-            + "|(\\*\\*\\*(?<bolditalic>[^*\\n]+)\\*\\*\\*)"
-            + "|(\\*\\*(?<bold>[^*\\n]+)\\*\\*)"
-            + "|(__(?<usbold>[^_\\n]+)__)"
-            + "|(\\*(?<italic>[^*\\n]+)\\*)"
-            + "|(\\b_(?<usitalic>[^_\\n]+)_\\b)"
-            + "|(~~(?<strike>[^~\\n]+)~~)"
+            "(`([^`\\n]+)`)"
+            + "|(\\*\\*\\*([^*\\n]+)\\*\\*\\*)"
+            + "|(\\*\\*([^*\\n]+)\\*\\*)"
+            + "|(__([^_\\n]+)__)"
+            + "|(\\*([^*\\n]+)\\*)"
+            + "|(\\b_([^_\\n]+)_\\b)"
+            + "|(~~([^~\\n]+)~~)"
     );
 
     private static final int COLOR_INLINE_BG = Color.parseColor("#282A2D");
@@ -137,6 +140,15 @@ public class MarkdownParser {
         return blocks;
     }
 
+    private static char firstNonSpaceChar(String line) {
+        int len = line.length();
+        for (int i = 0; i < len; i++) {
+            char c = line.charAt(i);
+            if (c != ' ' && c != '\t') return c;
+        }
+        return '\0';
+    }
+
     /**
      * Parses standard markdown (headings, lists, blockquotes, inline styles, dividers).
      */
@@ -150,16 +162,17 @@ public class MarkdownParser {
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
+            char first = firstNonSpaceChar(line);
 
-            // Check if this line is a heading to give it breathing room above
-            Matcher headingMatch = HEADING_PATTERN.matcher(line);
-            boolean isHeading = headingMatch.matches();
+            // Fast-path: only test HEADING_PATTERN if line starts with '#'
+            Matcher headingMatcher = (first == '#') ? HEADING_PATTERN.matcher(line) : null;
+            boolean isHeading = (headingMatcher != null && headingMatcher.matches());
 
             if (isHeading && builder.length() > 0 && !endsWithDoubleNewline(builder)) {
                 builder.append("\n"); // Extra vertical margin before heading
             }
 
-            SpannableStringBuilder formattedLine = parseLine(line);
+            SpannableStringBuilder formattedLine = parseLine(line, first, isHeading ? headingMatcher : null);
             builder.append(formattedLine);
 
             if (i < lines.length - 1) {
@@ -175,9 +188,13 @@ public class MarkdownParser {
         return len >= 2 && ssb.charAt(len - 1) == '\n' && ssb.charAt(len - 2) == '\n';
     }
 
-    private static SpannableStringBuilder parseLine(String line) {
+    private static SpannableStringBuilder parseLine(String line, char first, Matcher matchedHeading) {
+        if (first == '\0') {
+            return new SpannableStringBuilder(line);
+        }
+
         // 1. Horizontal Rule: ---, ***, ___
-        if (HR_PATTERN.matcher(line).matches()) {
+        if ((first == '-' || first == '*' || first == '_') && HR_PATTERN.matcher(line).matches()) {
             SpannableStringBuilder hr = new SpannableStringBuilder();
             hr.append("────────────────────────────────────────");
             hr.setSpan(new ForegroundColorSpan(COLOR_DIVIDER), 0, hr.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -186,10 +203,9 @@ public class MarkdownParser {
         }
 
         // 2. Headings: #, ##, ###, ####, #####, ######
-        Matcher headingMatcher = HEADING_PATTERN.matcher(line);
-        if (headingMatcher.matches()) {
-            String hashes = headingMatcher.group(1);
-            String content = headingMatcher.group(2).trim();
+        if (matchedHeading != null) {
+            String hashes = matchedHeading.group(1);
+            String content = matchedHeading.group(2).trim();
             int level = hashes.length();
 
             SpannableStringBuilder ssb = parseInlineStyles(content);
@@ -218,22 +234,25 @@ public class MarkdownParser {
         }
 
         // 3. Blockquote: > Quote
-        Matcher bqMatcher = BLOCKQUOTE_PATTERN.matcher(line);
-        if (bqMatcher.matches()) {
-            String content = bqMatcher.group(1).trim();
-            SpannableStringBuilder ssb = new SpannableStringBuilder();
-            ssb.append("▎ ");
-            ssb.setSpan(new ForegroundColorSpan(COLOR_ACCENT), 0, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            int start = ssb.length();
-            ssb.append(parseInlineStyles(content));
-            ssb.setSpan(new StyleSpan(Typeface.ITALIC), start, ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            ssb.setSpan(new ForegroundColorSpan(COLOR_SECONDARY), start, ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            return ssb;
+        if (first == '>' || first == 'u' || first == '&') {
+            Matcher bqMatcher = BLOCKQUOTE_PATTERN.matcher(line);
+            if (bqMatcher.matches()) {
+                String content = bqMatcher.group(1).trim();
+                SpannableStringBuilder ssb = new SpannableStringBuilder();
+                ssb.append("▎ ");
+                ssb.setSpan(new ForegroundColorSpan(COLOR_ACCENT), 0, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                int start = ssb.length();
+                ssb.append(parseInlineStyles(content));
+                ssb.setSpan(new StyleSpan(Typeface.ITALIC), start, ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new ForegroundColorSpan(COLOR_SECONDARY), start, ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                return ssb;
+            }
         }
 
         // 4. Bullet lists: - item, * item, + item
-        Matcher listMatcher = LIST_PATTERN.matcher(line);
-        if (listMatcher.matches()) {
+        if (first == '-' || first == '*' || first == '+') {
+            Matcher listMatcher = LIST_PATTERN.matcher(line);
+            if (listMatcher.matches()) {
             int indent = listMatcher.group(1).length();
             String content = listMatcher.group(3).trim();
 
@@ -274,27 +293,30 @@ public class MarkdownParser {
                 ssb.setSpan(new StyleSpan(Typeface.BOLD), 2, 5, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
 
-            ssb.append(parseInlineStyles(content));
-            return ssb;
+                ssb.append(parseInlineStyles(content));
+                return ssb;
+            }
         }
 
         // 5. Numbered lists: 1. item, 2. item
-        Matcher numMatcher = NUMBERED_LIST_PATTERN.matcher(line);
-        if (numMatcher.matches()) {
-            int indent = numMatcher.group(1).length();
-            String num = numMatcher.group(2) + ".";
-            String content = numMatcher.group(3).trim();
+        if (first >= '0' && first <= '9') {
+            Matcher numMatcher = NUMBERED_LIST_PATTERN.matcher(line);
+            if (numMatcher.matches()) {
+                int indent = numMatcher.group(1).length();
+                String num = numMatcher.group(2) + ".";
+                String content = numMatcher.group(3).trim();
 
-            SpannableStringBuilder ssb = new SpannableStringBuilder();
-            appendIndent(ssb, indent);
-            ssb.append("  ").append(num).append("  ");
-            int numStart = ssb.length() - num.length() - 2;
-            int numEnd = ssb.length() - 2;
-            ssb.setSpan(new ForegroundColorSpan(COLOR_INLINE_TEXT), numStart, numEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            ssb.setSpan(new StyleSpan(Typeface.BOLD), numStart, numEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                SpannableStringBuilder ssb = new SpannableStringBuilder();
+                appendIndent(ssb, indent);
+                ssb.append("  ").append(num).append("  ");
+                int numStart = ssb.length() - num.length() - 2;
+                int numEnd = ssb.length() - 2;
+                ssb.setSpan(new ForegroundColorSpan(COLOR_INLINE_TEXT), numStart, numEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new StyleSpan(Typeface.BOLD), numStart, numEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-            ssb.append(parseInlineStyles(content));
-            return ssb;
+                ssb.append(parseInlineStyles(content));
+                return ssb;
+            }
         }
 
         // 6. Regular line with inline formatting
@@ -314,7 +336,22 @@ public class MarkdownParser {
         ssb.setSpan(new ForegroundColorSpan(color), 0, ssb.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
+    private static boolean hasInlineDelimiters(String text) {
+        int len = text.length();
+        for (int i = 0; i < len; i++) {
+            char c = text.charAt(i);
+            if (c == '*' || c == '`' || c == '_' || c == '~') {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static SpannableStringBuilder parseInlineStyles(String text) {
+        // Fast path: 0 regex Matcher allocation when line has no inline markdown characters
+        if (!hasInlineDelimiters(text)) {
+            return new SpannableStringBuilder(text);
+        }
         SpannableStringBuilder ssb = new SpannableStringBuilder();
         Matcher matcher = INLINE_PATTERN.matcher(text);
         int lastEnd = 0;
@@ -324,9 +361,9 @@ public class MarkdownParser {
                 ssb.append(text.substring(lastEnd, matcher.start()));
             }
 
-            if (matcher.group("code") != null) {
+            if (matcher.group(2) != null) {
                 // Inline code pill: `code`
-                String code = matcher.group("code");
+                String code = matcher.group(2);
                 int start = ssb.length();
                 ssb.append(" ").append(code).append(" ");
                 int end = ssb.length();
@@ -334,41 +371,41 @@ public class MarkdownParser {
                 ssb.setSpan(new ForegroundColorSpan(COLOR_INLINE_TEXT), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 ssb.setSpan(new TypefaceSpan("monospace"), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 ssb.setSpan(new RelativeSizeSpan(0.92f), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("bolditalic") != null) {
-                String bi = matcher.group("bolditalic");
+            } else if (matcher.group(4) != null) {
+                String bi = matcher.group(4);
                 int start = ssb.length();
                 ssb.append(bi);
                 int end = ssb.length();
                 ssb.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 ssb.setSpan(new ForegroundColorSpan(COLOR_WHITE), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("bold") != null) {
-                String b = matcher.group("bold");
+            } else if (matcher.group(6) != null) {
+                String b = matcher.group(6);
                 int start = ssb.length();
                 ssb.append(b);
                 int end = ssb.length();
                 ssb.setSpan(new StyleSpan(Typeface.BOLD), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 ssb.setSpan(new ForegroundColorSpan(COLOR_WHITE), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("usbold") != null) { // __bold__
-                String b = matcher.group("usbold");
+            } else if (matcher.group(8) != null) { // __bold__
+                String b = matcher.group(8);
                 int start = ssb.length();
                 ssb.append(b);
                 int end = ssb.length();
                 ssb.setSpan(new StyleSpan(Typeface.BOLD), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 ssb.setSpan(new ForegroundColorSpan(COLOR_WHITE), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("italic") != null) {
-                String it = matcher.group("italic");
+            } else if (matcher.group(10) != null) {
+                String it = matcher.group(10);
                 int start = ssb.length();
                 ssb.append(it);
                 int end = ssb.length();
                 ssb.setSpan(new StyleSpan(Typeface.ITALIC), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("usitalic") != null) { // _italic_
-                String it = matcher.group("usitalic");
+            } else if (matcher.group(12) != null) { // _italic_
+                String it = matcher.group(12);
                 int start = ssb.length();
                 ssb.append(it);
                 int end = ssb.length();
                 ssb.setSpan(new StyleSpan(Typeface.ITALIC), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (matcher.group("strike") != null) {
-                String st = matcher.group("strike");
+            } else if (matcher.group(14) != null) {
+                String st = matcher.group(14);
                 int start = ssb.length();
                 ssb.append(st);
                 int end = ssb.length();

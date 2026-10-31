@@ -1,5 +1,7 @@
 package com.google.geminiclone;
 
+import java.util.List;
+
 public class ChatMessage {
     private String text;
     private final boolean isUser;
@@ -12,6 +14,10 @@ public class ChatMessage {
     private String attachmentUri;
     private String attachmentMimeType;
     private String attachmentName;
+
+    // Cached parsed representations (zero regex/span allocation on RecyclerView scroll)
+    private transient CharSequence cachedMarkdownText;
+    private transient List<MarkdownParser.MessageBlock> cachedBlocks;
 
     public ChatMessage(String text, boolean isUser) {
         this.text = text;
@@ -62,7 +68,25 @@ public class ChatMessage {
     }
 
     public void setText(String text) {
-        this.text = text;
+        if (this.text == null || !this.text.equals(text)) {
+            this.text = text;
+            this.cachedMarkdownText = null;
+            this.cachedBlocks = null;
+        }
+    }
+
+    public CharSequence getParsedMarkdownText() {
+        if (cachedMarkdownText == null) {
+            cachedMarkdownText = MarkdownParser.parseMarkdownText(text);
+        }
+        return cachedMarkdownText;
+    }
+
+    public List<MarkdownParser.MessageBlock> getParsedBlocks() {
+        if (cachedBlocks == null) {
+            cachedBlocks = MarkdownParser.parseBlocks(text);
+        }
+        return cachedBlocks;
     }
 
     public boolean isUser() {

@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.google.geminiclone"
-        minSdk 24
+        minSdk 21
         targetSdk 34
         versionCode 1
         versionName "1.0.0"
@@ -18,9 +18,9 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags "-std=c++20 -O3 -Wall"
+                cppFlags "-std=c++20 -O3 -ffast-math -fno-exceptions -fno-rtti -fvisibility=hidden -funroll-loops -Wall"
                 arguments "-DANDROID_STL=c++_shared"
-                abiFilters "arm64-v8a", "armeabi-v7a", "x86_64"
+                abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
             }
         }
     }

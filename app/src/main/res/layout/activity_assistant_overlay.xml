@@ -50,18 +50,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:text="Gemini"
+                android:text="@string/gemini_title"
                 android:textColor="@color/text_primary"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
             <!-- Drag Handle Bar in center -->
-            <View
-                android:layout_width="36dp"
-                android:layout_height="4dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:background="@drawable/bg_sheet_handle" />
 
             <View
                 android:layout_width="0dp"

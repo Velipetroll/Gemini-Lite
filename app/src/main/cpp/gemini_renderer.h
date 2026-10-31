@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GLES3/gl3.h>
+#include <GLES2/gl2.h>
 
 class GeminiRenderer {
 public:
@@ -23,22 +23,21 @@ private:
     int m_height;
 
     GLuint m_program;
-    GLuint m_vao;
     GLuint m_vbo;
 
-    // Optimized uniform locations
-    GLint m_locResolution;
-    GLint m_locTime;
-    GLint m_locTouch;
-    GLint m_locStarScale;
-    GLint m_locGlowIntensity;
+    // Optimized uniform locations (vertex + fragment)
+    GLint m_locHalfAspect;
+    GLint m_locWaveOffset;
     GLint m_locRotBasis;
-    GLint m_locGradDir;
+    GLint m_locScaledGradDir;
+    GLint m_locTouch;
+    GLint m_locStarParams; // x=starScale, y=sqrtRadius, z=invRadiusSq, w=glowIntensity
     GLint m_locP1;
     GLint m_locP2;
     GLint m_locP3;
 
     float m_starScale;
     float m_glowIntensity;
+    float m_aspect;
     bool m_initialized;
 };
