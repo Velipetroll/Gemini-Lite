@@ -124,6 +124,78 @@
             android:ellipsize="end" />
     </LinearLayout>
 
+    <!-- Web Search Grounding Switch -->
+    <LinearLayout
+        android:id="@+id/rowWebSearchToggle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_suggestion_card"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="10dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Búsqueda web en tiempo real (Google)"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Permite consultar información actual de internet"
+                android:textColor="@color/text_hint"
+                android:textSize="11sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchWebSearch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true" />
+    </LinearLayout>
+
+    <!-- Custom System Prompt Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Instrucciones personalizadas (System Prompt)"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="6dp" />
+
+    <EditText
+        android:id="@+id/etSystemPromptInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_suggestion_card"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp"
+        android:hint="Ej: Responde siempre de forma directa y breve..."
+        android:textColorHint="@color/text_hint"
+        android:textColor="@color/text_primary"
+        android:textSize="13sp"
+        android:minLines="2"
+        android:maxLines="4"
+        android:gravity="top|start"
+        android:inputType="textCapSentences|textMultiLine"
+        android:importantForAutofill="no" />
+
     <!-- Save Button -->
     <Button
         android:id="@+id/btnSaveSettings"

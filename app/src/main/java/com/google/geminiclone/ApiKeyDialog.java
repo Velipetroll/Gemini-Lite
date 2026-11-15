@@ -32,9 +32,21 @@ public class ApiKeyDialog {
         Button btnTest = view.findViewById(R.id.btnTestKey);
         ProgressBar pbTesting = view.findViewById(R.id.pbTesting);
         TextView tvTestStatus = view.findViewById(R.id.tvTestStatus);
+        androidx.appcompat.widget.SwitchCompat switchWebSearch = view.findViewById(R.id.switchWebSearch);
+        View rowWebSearchToggle = view.findViewById(R.id.rowWebSearchToggle);
+        EditText etSystemPrompt = view.findViewById(R.id.etSystemPromptInput);
         Button btnSave = view.findViewById(R.id.btnSaveSettings);
 
         etApiKey.setText(keyManager.getApiKey());
+        if (switchWebSearch != null) {
+            switchWebSearch.setChecked(keyManager.isWebSearchEnabled());
+        }
+        if (rowWebSearchToggle != null && switchWebSearch != null) {
+            rowWebSearchToggle.setOnClickListener(v -> switchWebSearch.setChecked(!switchWebSearch.isChecked()));
+        }
+        if (etSystemPrompt != null) {
+            etSystemPrompt.setText(keyManager.getSystemPrompt());
+        }
 
         // Toggle password visibility
         final boolean[] isPasswordVisible = {false};
@@ -81,50 +93,6 @@ public class ApiKeyDialog {
                 return;
             }
 
-            // Validate format via C++ native engine
-            if (!GeminiNative.validateApiKey(key)) {
-                tvTestStatus.setText("Formato de clave inválido (debe comenzar con AIzaSy)");
-                tvTestStatus.setTextColor(Color.parseColor("#EA4335"));
-                return;
-            }
-
-            pbTesting.setVisibility(View.VISIBLE);
-            tvTestStatus.setText("Probando conexión con Google AI...");
-            tvTestStatus.setTextColor(Color.parseColor("#59C0F0"));
-            btnTest.setEnabled(false);
-
-            String selectedModel = keyManager.getModel();
-            String selectedThinking = keyManager.getThinkingLevel();
-
-            new GeminiApiClient().testConnection(key, selectedModel, selectedThinking, new GeminiApiClient.ApiCallback() {
-                @Override
-                public void onSuccess(String responseText) {
-                    pbTesting.setVisibility(View.GONE);
-                    btnTest.setEnabled(true);
-                    tvTestStatus.setText("¡Conexión exitosa! Modelo listo.");
-                    tvTestStatus.setTextColor(Color.parseColor("#34A853"));
-                }
-
-                @Override
-                public void onError(String errorMessage) {
-                    pbTesting.setVisibility(View.GONE);
-                    btnTest.setEnabled(true);
-                    tvTestStatus.setText(errorMessage);
-                    tvTestStatus.setTextColor(Color.parseColor("#EA4335"));
-                }
-            });
-        });
-
-        // Test connection
-        btnTest.setOnClickListener(v -> {
-            String key = etApiKey.getText().toString().trim();
-            if (key.isEmpty()) {
-                tvTestStatus.setText("Ingresa una clave primero");
-                tvTestStatus.setTextColor(Color.parseColor("#EA4335"));
-                return;
-            }
-
-            // Validate format via C++ native engine
             if (!GeminiNative.validateApiKey(key)) {
                 tvTestStatus.setText("Formato de clave inválido (debe comenzar con AIzaSy)");
                 tvTestStatus.setTextColor(Color.parseColor("#EA4335"));
@@ -160,7 +128,13 @@ public class ApiKeyDialog {
 
         btnSave.setOnClickListener(v -> {
             keyManager.setApiKey(etApiKey.getText().toString().trim());
-            Toast.makeText(context, "API Key guardada", Toast.LENGTH_SHORT).show();
+            if (switchWebSearch != null) {
+                keyManager.setWebSearchEnabled(switchWebSearch.isChecked());
+            }
+            if (etSystemPrompt != null) {
+                keyManager.setSystemPrompt(etSystemPrompt.getText().toString().trim());
+            }
+            Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show();
             if (onSaved != null) onSaved.run();
             dialog.dismiss();
         });

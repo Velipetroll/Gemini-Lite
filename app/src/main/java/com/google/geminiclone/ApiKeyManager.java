@@ -9,6 +9,8 @@ public class ApiKeyManager {
     private static final String KEY_API_KEY = "gemini_api_key";
     private static final String KEY_MODEL = "gemini_model";
     private static final String KEY_THINKING_LEVEL = "gemini_thinking_level";
+    private static final String KEY_WEB_SEARCH = "gemini_web_search";
+    private static final String KEY_SYSTEM_PROMPT = "gemini_system_prompt";
 
     public static final String MODEL_38_FLASH = "gemini-3.8-flash";
     public static final String MODEL_35_FLASH_LITE = "gemini-3.5-flash-lite";
@@ -38,6 +40,22 @@ public class ApiKeyManager {
     public boolean hasApiKey() {
         String key = getApiKey();
         return key != null && !key.trim().isEmpty();
+    }
+
+    public boolean isWebSearchEnabled() {
+        return prefs.getBoolean(KEY_WEB_SEARCH, true);
+    }
+
+    public void setWebSearchEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_WEB_SEARCH, enabled).apply();
+    }
+
+    public String getSystemPrompt() {
+        return prefs.getString(KEY_SYSTEM_PROMPT, "");
+    }
+
+    public void setSystemPrompt(String systemPrompt) {
+        prefs.edit().putString(KEY_SYSTEM_PROMPT, systemPrompt != null ? systemPrompt.trim() : "").apply();
     }
 
     public String getModel() {

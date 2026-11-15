@@ -16,7 +16,7 @@ public class GeminiNative {
     // C++ Gemini API Protocol & Utilities
     public static native boolean validateApiKey(String apiKey);
     public static native String buildEndpoint(String model, String apiKey);
-    public static native String buildRequestPayload(String prompt, String thinkingLevel);
-    public static native String buildRequestPayloadWithFile(String prompt, String mimeType, String base64Data, String thinkingLevel);
+    public static native String buildRequestPayload(String prompt, String thinkingLevel, String systemInstruction, boolean enableWebSearch);
+    public static native String buildRequestPayloadWithFile(String prompt, String mimeType, String base64Data, String thinkingLevel, String systemInstruction, boolean enableWebSearch);
     public static native String parseTextResponse(String jsonResponse);
 }

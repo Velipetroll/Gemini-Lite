@@ -90,22 +90,27 @@ Java_com_google_geminiclone_GeminiNative_buildEndpoint(JNIEnv* env, jclass clazz
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_google_geminiclone_GeminiNative_buildRequestPayload(JNIEnv* env, jclass clazz, jstring jPrompt, jstring jThinkingLevel) {
+Java_com_google_geminiclone_GeminiNative_buildRequestPayload(JNIEnv* env, jclass clazz, jstring jPrompt, jstring jThinkingLevel, jstring jSystemInstruction, jboolean jEnableWebSearch) {
     std::string prompt = jstring2string(env, jPrompt);
     std::string thinkingLevel = jstring2string(env, jThinkingLevel);
-    std::string payload = GeminiApiClient::buildRequestPayload(prompt, thinkingLevel);
+    std::string sysInstruction = jstring2string(env, jSystemInstruction);
+    bool enableWebSearch = (jEnableWebSearch == JNI_TRUE);
+    std::string payload = GeminiApiClient::buildRequestPayload(prompt, thinkingLevel, sysInstruction, enableWebSearch);
     return env->NewStringUTF(payload.c_str());
 }
 
 JNIEXPORT jstring JNICALL
 Java_com_google_geminiclone_GeminiNative_buildRequestPayloadWithFile(JNIEnv* env, jclass clazz,
                                                                     jstring jPrompt, jstring jMimeType,
-                                                                    jstring jBase64Data, jstring jThinkingLevel) {
+                                                                    jstring jBase64Data, jstring jThinkingLevel,
+                                                                    jstring jSystemInstruction, jboolean jEnableWebSearch) {
     std::string prompt = jstring2string(env, jPrompt);
     std::string mimeType = jstring2string(env, jMimeType);
     std::string base64Data = jstring2string(env, jBase64Data);
     std::string thinkingLevel = jstring2string(env, jThinkingLevel);
-    std::string payload = GeminiApiClient::buildRequestPayloadWithFile(prompt, mimeType, base64Data, thinkingLevel);
+    std::string sysInstruction = jstring2string(env, jSystemInstruction);
+    bool enableWebSearch = (jEnableWebSearch == JNI_TRUE);
+    std::string payload = GeminiApiClient::buildRequestPayloadWithFile(prompt, mimeType, base64Data, thinkingLevel, sysInstruction, enableWebSearch);
     return env->NewStringUTF(payload.c_str());
 }
 

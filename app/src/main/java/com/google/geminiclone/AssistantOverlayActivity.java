@@ -623,10 +623,14 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
         setGeneratingState(true);
 
         String apiKey = apiKeyManager.getApiKey();
+        String systemInstruction = DeviceActionExecutor.buildFullSystemInstruction(this, apiKeyManager.getSystemPrompt());
+        boolean enableWebSearch = apiKeyManager.isWebSearchEnabled();
+
         GeminiApiClient.ApiCallback callback = new GeminiApiClient.ApiCallback() {
             @Override
             public void onSuccess(String responseText) {
-                streamTypewriterResponse(geminiPos, responseText);
+                String cleanText = DeviceActionExecutor.processAndExecuteActions(AssistantOverlayActivity.this, responseText);
+                streamTypewriterResponse(geminiPos, cleanText);
             }
 
             @Override
@@ -645,9 +649,9 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
         String effectiveMime = (attachedBase64 != null) ? attachedMime : activeChatAttachmentMime;
 
         if (effectiveBase64 != null) {
-            apiClient.sendPromptWithFile(apiKey, model, thinkingLevel, contextualPrompt, effectiveMime, effectiveBase64, callback);
+            apiClient.sendPromptWithFile(apiKey, model, thinkingLevel, contextualPrompt, effectiveMime, effectiveBase64, systemInstruction, enableWebSearch, callback);
         } else {
-            apiClient.sendPrompt(apiKey, model, thinkingLevel, contextualPrompt, callback);
+            apiClient.sendPrompt(apiKey, model, thinkingLevel, contextualPrompt, systemInstruction, enableWebSearch, callback);
         }
     }
 

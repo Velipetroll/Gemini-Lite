@@ -54,22 +54,33 @@ std::string GeminiApiClient::escapeJsonString(const std::string& input) {
     return out;
 }
 
-std::string GeminiApiClient::buildRequestPayload(const std::string& prompt, const std::string& thinkingLevel) {
+std::string GeminiApiClient::buildRequestPayload(const std::string& prompt, const std::string& thinkingLevel, const std::string& systemInstruction, bool enableWebSearch) {
     std::string level = thinkingLevel.empty() ? "high" : thinkingLevel;
     std::string escapedPrompt = escapeJsonString(prompt);
     std::string escapedLevel = escapeJsonString(level);
+    std::string escapedSys = escapeJsonString(systemInstruction);
 
     std::string out;
-    out.reserve(escapedPrompt.size() + 220);
-    out.append("{\"contents\":[{\"parts\":[{\"text\":\"")
+    out.reserve(escapedPrompt.size() + escapedSys.size() + 320);
+    out.append("{");
+    if (!escapedSys.empty()) {
+        out.append("\"systemInstruction\":{\"parts\":[{\"text\":\"")
+           .append(escapedSys)
+           .append("\"}]},");
+    }
+    out.append("\"contents\":[{\"parts\":[{\"text\":\"")
        .append(escapedPrompt)
-       .append("\"}]}],\"generationConfig\":{\"temperature\":0.7,\"topP\":0.95,\"maxOutputTokens\":4096,\"thinkingConfig\":{\"thinkingLevel\":\"")
+       .append("\"}]}]");
+    if (enableWebSearch) {
+        out.append(",\"tools\":[{\"google_search\":{}}]");
+    }
+    out.append(",\"generationConfig\":{\"temperature\":0.7,\"topP\":0.95,\"maxOutputTokens\":4096,\"thinkingConfig\":{\"thinkingLevel\":\"")
        .append(escapedLevel)
        .append("\"}}}");
     return out;
 }
 
-std::string GeminiApiClient::buildRequestPayloadWithFile(const std::string& prompt, const std::string& mimeType, const std::string& base64Data, const std::string& thinkingLevel) {
+std::string GeminiApiClient::buildRequestPayloadWithFile(const std::string& prompt, const std::string& mimeType, const std::string& base64Data, const std::string& thinkingLevel, const std::string& systemInstruction, bool enableWebSearch) {
     std::string level = thinkingLevel.empty() ? "high" : thinkingLevel;
     std::string textPrompt;
     if (prompt.empty()) {
@@ -82,16 +93,27 @@ std::string GeminiApiClient::buildRequestPayloadWithFile(const std::string& prom
     std::string escapedMime = escapeJsonString(mimeType);
     std::string escapedPrompt = escapeJsonString(textPrompt);
     std::string escapedLevel = escapeJsonString(level);
+    std::string escapedSys = escapeJsonString(systemInstruction);
 
     std::string out;
-    out.reserve(base64Data.size() + escapedPrompt.size() + 320);
-    out.append("{\"contents\":[{\"parts\":[{\"inlineData\":{\"mimeType\":\"")
+    out.reserve(base64Data.size() + escapedPrompt.size() + escapedSys.size() + 400);
+    out.append("{");
+    if (!escapedSys.empty()) {
+        out.append("\"systemInstruction\":{\"parts\":[{\"text\":\"")
+           .append(escapedSys)
+           .append("\"}]},");
+    }
+    out.append("\"contents\":[{\"parts\":[{\"inlineData\":{\"mimeType\":\"")
        .append(escapedMime)
        .append("\",\"data\":\"")
        .append(base64Data)
        .append("\"}},{\"text\":\"")
        .append(escapedPrompt)
-       .append("\"}]}],\"generationConfig\":{\"temperature\":0.7,\"topP\":0.95,\"maxOutputTokens\":4096,\"thinkingConfig\":{\"thinkingLevel\":\"")
+       .append("\"}]}]");
+    if (enableWebSearch) {
+        out.append(",\"tools\":[{\"google_search\":{}}]");
+    }
+    out.append(",\"generationConfig\":{\"temperature\":0.7,\"topP\":0.95,\"maxOutputTokens\":4096,\"thinkingConfig\":{\"thinkingLevel\":\"")
        .append(escapedLevel)
        .append("\"}}}");
     return out;
@@ -153,10 +175,15 @@ std::string GeminiApiClient::parseTextResponse(const std::string& jsonString) {
     std::string finalResult;
     std::string fallbackResult;
     size_t searchPos = 0;
+    size_t maxPos = jsonString.length();
+    size_t groundingPos = jsonString.find("\"groundingMetadata\"");
+    if (groundingPos != std::string::npos) {
+        maxPos = groundingPos;
+    }
 
-    while (searchPos < jsonString.length()) {
+    while (searchPos < maxPos) {
         size_t keyPos = jsonString.find("\"text\"", searchPos);
-        if (keyPos == std::string::npos) break;
+        if (keyPos == std::string::npos || keyPos >= maxPos) break;
 
         size_t colonPos = jsonString.find(':', keyPos + 6);
         if (colonPos == std::string::npos) break;

@@ -561,6 +561,19 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
             showThinkingSubmenu(v, popupWindow, ApiKeyManager.MODEL_38_FLASH, "3.8 Flash");
         });
 
+        // Google Search Grounding Toggle in Models Menu
+        ImageView ivCheckWebSearch = popupView.findViewById(R.id.ivCheckWebSearch);
+        View btnPopupWebSearch = popupView.findViewById(R.id.btnPopupWebSearch);
+        if (ivCheckWebSearch != null && btnPopupWebSearch != null) {
+            ivCheckWebSearch.setVisibility(apiKeyManager.isWebSearchEnabled() ? View.VISIBLE : View.INVISIBLE);
+            btnPopupWebSearch.setOnClickListener(v -> {
+                boolean next = !apiKeyManager.isWebSearchEnabled();
+                apiKeyManager.setWebSearchEnabled(next);
+                ivCheckWebSearch.setVisibility(next ? View.VISIBLE : View.INVISIBLE);
+                Toast.makeText(this, next ? "Búsqueda web activada" : "Búsqueda web desactivada", Toast.LENGTH_SHORT).show();
+            });
+        }
+
         // Show directly below topBar anchored fixed to the right margin (14dp), so changes to btnModelSelector width don't move it
         View topBar = findViewById(R.id.topBar);
         View anchorView = (topBar != null) ? topBar : anchor;
@@ -910,10 +923,14 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
 
         // Send API request via C++ backend (multimodal or text)
         String apiKey = apiKeyManager.getApiKey();
+        String systemInstruction = DeviceActionExecutor.buildFullSystemInstruction(this, apiKeyManager.getSystemPrompt());
+        boolean enableWebSearch = apiKeyManager.isWebSearchEnabled();
+
         GeminiApiClient.ApiCallback callback = new GeminiApiClient.ApiCallback() {
             @Override
             public void onSuccess(String responseText) {
-                streamTypewriterResponse(geminiPos, responseText);
+                String cleanText = DeviceActionExecutor.processAndExecuteActions(MainActivity.this, responseText);
+                streamTypewriterResponse(geminiPos, cleanText);
             }
 
             @Override
@@ -932,9 +949,9 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         String effectiveMime = (attachedBase64 != null) ? attachedMime : activeChatAttachmentMime;
 
         if (effectiveBase64 != null) {
-            apiClient.sendPromptWithFile(apiKey, model, thinkingLevel, contextualPrompt, effectiveMime, effectiveBase64, callback);
+            apiClient.sendPromptWithFile(apiKey, model, thinkingLevel, contextualPrompt, effectiveMime, effectiveBase64, systemInstruction, enableWebSearch, callback);
         } else {
-            apiClient.sendPrompt(apiKey, model, thinkingLevel, contextualPrompt, callback);
+            apiClient.sendPrompt(apiKey, model, thinkingLevel, contextualPrompt, systemInstruction, enableWebSearch, callback);
         }
     }
 
