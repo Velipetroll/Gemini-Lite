@@ -119,6 +119,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         apiKeyManager = new ApiKeyManager(this);
         apiClient = new GeminiApiClient();
         dbHelper = new ChatDatabaseHelper(this);
+        WebSearchEngine.init(this);
 
         setupFilePicker();
         setupCameraLauncher();

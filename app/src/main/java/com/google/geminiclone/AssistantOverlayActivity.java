@@ -107,6 +107,7 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
         apiKeyManager = new ApiKeyManager(this);
         apiClient = new GeminiApiClient();
         dbHelper = new ChatDatabaseHelper(this);
+        WebSearchEngine.init(this);
 
         initViews();
         setupActivityLaunchers();

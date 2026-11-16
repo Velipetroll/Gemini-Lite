@@ -47,24 +47,47 @@ public class GeminiApiClient {
         executor.execute(() -> {
             try {
                 String endpointUrl = GeminiNative.buildEndpoint(model, apiKey);
-                String sysInstr = (systemInstruction != null) ? systemInstruction : "";
+                String rawSysInstr = (systemInstruction != null) ? systemInstruction : "";
+                String sysInstrNoSearch = stripInternetRule(rawSysInstr);
+                String firstSysInstr = enableWebSearch ? rawSysInstr : sysInstrNoSearch;
                 boolean hasFile = (base64Data != null && !base64Data.isEmpty() && mimeType != null);
 
-                android.util.Log.d("GeminiApiClient", "Sending request to " + model);
                 String payload = hasFile
-                        ? GeminiNative.buildRequestPayloadWithFile(prompt, mimeType, base64Data, thinkingLevel, sysInstr, false)
-                        : GeminiNative.buildRequestPayload(prompt, thinkingLevel, sysInstr, false);
+                        ? GeminiNative.buildRequestPayloadWithFile(prompt, mimeType, base64Data, thinkingLevel, firstSysInstr, false)
+                        : GeminiNative.buildRequestPayload(prompt, thinkingLevel, firstSysInstr, false);
 
                 HttpResult result = executePost(endpointUrl, payload);
 
-                final int finalStatus = result.statusCode;
-                final String rawResponse = result.body;
+                if (result.statusCode >= 200 && result.statusCode < 300) {
+                    String parsedText = GeminiNative.parseTextResponse(result.body);
 
-                if (finalStatus >= 200 && finalStatus < 300) {
-                    String parsedText = GeminiNative.parseTextResponse(rawResponse);
-                    mainHandler.post(() -> callback.onSuccess(parsedText));
+                    if (enableWebSearch && parsedText.contains("[[SEARCH:")) {
+                        String searchQuery = extractSearchQuery(parsedText);
+                        if (!searchQuery.isEmpty()) {
+                            String webContext = WebSearchEngine.search(searchQuery);
+                            String groundedPrompt = !webContext.isEmpty()
+                                    ? prompt + "\n\n[Resultados web para \"" + searchQuery + "\"]\n" + webContext
+                                    : prompt + "\n\n[No se pudieron obtener resultados web en este momento].";
+                            String secondPayload = hasFile
+                                    ? GeminiNative.buildRequestPayloadWithFile(groundedPrompt, mimeType, base64Data, thinkingLevel, sysInstrNoSearch, false)
+                                    : GeminiNative.buildRequestPayload(groundedPrompt, thinkingLevel, sysInstrNoSearch, false);
+                            HttpResult secondResult = executePost(endpointUrl, secondPayload);
+                            if (secondResult.statusCode >= 200 && secondResult.statusCode < 300) {
+                                parsedText = GeminiNative.parseTextResponse(secondResult.body);
+                            } else {
+                                final int errStatus = secondResult.statusCode;
+                                final String errMsg = GeminiNative.parseTextResponse(secondResult.body);
+                                mainHandler.post(() -> callback.onError("Error (" + errStatus + "): " + errMsg));
+                                return;
+                            }
+                        }
+                    }
+
+                    final String finalText = parsedText;
+                    mainHandler.post(() -> callback.onSuccess(finalText));
                 } else {
-                    String parsedError = GeminiNative.parseTextResponse(rawResponse);
+                    final int finalStatus = result.statusCode;
+                    String parsedError = GeminiNative.parseTextResponse(result.body);
                     mainHandler.post(() -> callback.onError("Error (" + finalStatus + "): " + parsedError));
                 }
 
@@ -72,6 +95,20 @@ public class GeminiApiClient {
                 mainHandler.post(() -> callback.onError("Error de red: " + e.getMessage()));
             }
         });
+    }
+
+    private static String extractSearchQuery(String text) {
+        int start = text.indexOf("[[SEARCH:");
+        if (start < 0) return "";
+        start += 9;
+        int end = text.indexOf("]]", start);
+        if (end < 0) return "";
+        return text.substring(start, end).trim();
+    }
+
+    private static String stripInternetRule(String sysInstr) {
+        if (sysInstr == null || sysInstr.isEmpty()) return "";
+        return sysInstr.replaceAll("Herramienta de búsqueda web:[\\s\\S]*?(?=Acciones del dispositivo:)", "");
     }
 
     private static class HttpResult {
