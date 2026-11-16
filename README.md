@@ -63,7 +63,8 @@ La aplicación no incluye claves preconfiguradas ni servidores intermediarios. C
   - **Volumen multimedia**, **marcador telefónico** y **apertura de enlaces**.
 
 ### Búsqueda web en tiempo real y System Prompt personalizado
-- **Búsqueda web bajo demanda (`WebSearchEngine`)**: Activada automáticamente por la propia IA únicamente cuando necesita verificación factual o datos recientes, sin depender de palabras clave fijas y sin costo adicional de API.
+- **Búsqueda web bajo demanda (`WebSearchEngine`)**: Activada automáticamente por la propia IA cuando necesita verificación factual o datos recientes, ejecutando 4 subconsultas complementarias (consulta directa, sinónimos/inglés con `OR`, mes actual y última semana) con filtro de frescura temporal (`qdr:h|d|w|m`) y reintentos automáticos HTTP ante errores transitorios (`503`/`429`/`5xx`).
+- **Fuentes consultadas**: Botón en cada respuesta con búsqueda web que abre un menú flotante estilo asistente con los enlaces consultados, persistidos localmente en SQLite.
 - **Instrucciones personalizadas (System Prompt)**: Campo editable en **Configuración de API** para definir el comportamiento y estilo de respuesta del asistente.
 
 ## Optimizaciones de rendimiento
@@ -81,8 +82,8 @@ Para asegurar que la aplicación funcione a 60 FPS tanto en teléfonos económic
    - El parseo de Markdown y resaltado de sintaxis se guarda en caché por mensaje para no recalcularse al desplazar la lista.
 4. **Motor de búsqueda web (`WebSearchEngine`)**:
    - `WebView` invisible bajo demanda con `setWillNotDraw(true)`, `LAYER_TYPE_NONE` y `RENDERER_PRIORITY_WAIVED` (API 26+).
-   - Pausa inmediata (`onPause()` / `pauseTimers()`) tras extraer el texto (0 % CPU en reposo) y auto-destrucción a los 60 segundos de inactividad.
-   - Caché TTL en memoria (5 minutos), extracción DOM dirigida con `TreeWalker` (evitando layout completo) y bloqueo de CSS, fuentes, imágenes y telemetría.
+   - Pausa inmediata (`onPause()` / `pauseTimers()`) tras extraer el texto, auto-destrucción a los 20 segundos de inactividad y liberación inmediata en `onTrimMemory` / `onDestroy`.
+   - Caché TTL en memoria (30 s – 5 min según frescura), resultados web ligeros (`udm=14`), extracción DOM dirigida con `TreeWalker` y bloqueo de CSS, fuentes, imágenes y telemetría.
 
 ## Estructura del código
 

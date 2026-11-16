@@ -119,7 +119,7 @@ public class WebSearchEngine {
             "try{var ch=new URL(cu).hostname.toLowerCase();if(ch.indexOf('.')===-1||ch.endsWith('.google.com'))continue;if(!seen[cu]){seen[cu]=1;srcs.push({title:ch,url:cu});}}catch(e){}" +
             "}" +
             "}" +
-            "return JSON.stringify({text:out.join(' '),sources:srcs,dbg:{url:location.href.slice(0,80),nLinks:links.length,links:dbg,cites:dbgCites}});" +
+            "return JSON.stringify({text:out.join('\\n'),sources:srcs,dbg:{url:location.href.slice(0,80),nLinks:links.length,links:dbg,cites:dbgCites}});" +
             "})();";
 
     public static void init(Context context) {
@@ -177,7 +177,9 @@ public class WebSearchEngine {
     private static SearchResult executeWebSearch(String query, String recency) {
         final String searchUrl;
         try {
-            String base = "https://www.google.com/search?q=" + URLEncoder.encode(query, "UTF-8") + "&hl=es&udm=14";
+            String lang = Locale.getDefault().getLanguage();
+            if (lang == null || lang.isEmpty()) lang = "es";
+            String base = "https://www.google.com/search?q=" + URLEncoder.encode(query, "UTF-8") + "&hl=" + lang + "&udm=14";
             searchUrl = (recency != null && !recency.isEmpty()) ? base + "&tbs=qdr:" + recency : base;
         } catch (Exception e) {
             return new SearchResult("", "[]");
@@ -426,7 +428,10 @@ public class WebSearchEngine {
             Object tok = new org.json.JSONTokener(jsResult).nextValue();
             String raw = (tok instanceof String) ? (String) tok : jsResult;
             org.json.JSONObject obj = new org.json.JSONObject(raw);
-            String text = obj.optString("text", "").replaceAll("\\s+", " ").trim();
+            String text = obj.optString("text", "")
+                    .replaceAll("[ \\t\\x0B\\f\\r]+", " ")
+                    .replaceAll("\\n{3,}", "\n\n")
+                    .trim();
             org.json.JSONArray arr = obj.optJSONArray("sources");
             if (arr == null || arr.length() == 0) {
                 android.util.Log.d("WebSearchEngine", "empty sources dbg=" + obj.opt("dbg"));

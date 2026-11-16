@@ -66,28 +66,81 @@ public class GeminiApiClient {
                     if (enableWebSearch && parsedText.contains("[[SEARCH:")) {
                         String rawSearchTag = extractSearchQuery(parsedText);
                         if (!rawSearchTag.isEmpty()) {
-                            String searchQuery = rawSearchTag;
                             String explicitRecency = "";
                             int qdrIdx = rawSearchTag.toLowerCase(java.util.Locale.ROOT).indexOf("|qdr:");
                             if (qdrIdx >= 0) {
-                                searchQuery = rawSearchTag.substring(0, qdrIdx).trim();
                                 explicitRecency = rawSearchTag.substring(qdrIdx + 5).trim();
+                                rawSearchTag = rawSearchTag.substring(0, qdrIdx).trim();
                             }
                             String userText = extractCurrentUserText(prompt);
-                            String effectiveRecency = WebSearchEngine.detectRecency(
-                                    searchQuery + " " + userText, explicitRecency);
-                            final String cleanSearchQuery = searchQuery;
+                            java.util.List<String> queryList = new java.util.ArrayList<>();
+                            for (String part : rawSearchTag.split("\\s*;;\\s*")) {
+                                String t = part.trim();
+                                if (!t.isEmpty() && queryList.size() < 4) {
+                                    queryList.add(t);
+                                }
+                            }
+                            if (queryList.size() < 4 && !queryList.isEmpty()) {
+                                String baseQ = queryList.get(0);
+                                String monthYear = new java.text.SimpleDateFormat("MMMM yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+                                if (queryList.size() < 4 && !baseQ.toLowerCase(java.util.Locale.ROOT).contains(monthYear.toLowerCase(java.util.Locale.ROOT))) {
+                                    queryList.add(baseQ + " " + monthYear);
+                                }
+                                if (queryList.size() < 4 && userText != null && !userText.isEmpty() && !userText.equalsIgnoreCase(baseQ)) {
+                                    queryList.add(userText.length() > 120 ? userText.substring(0, 120) : userText);
+                                }
+                                if (queryList.size() < 4) {
+                                    queryList.add(baseQ);
+                                }
+                            }
+                            String[] subQueries = queryList.toArray(new String[0]);
+                            int maxQueries = subQueries.length;
 
                             mainHandler.post(() -> callback.onStatusUpdate("Buscando en la web..."));
-                            WebSearchEngine.SearchResult searchResult =
-                                    WebSearchEngine.searchWithSources(cleanSearchQuery, effectiveRecency);
-                            String webContext = searchResult.text;
-                            if (searchResult.sourcesJson != null && searchResult.sourcesJson.length() > 2) {
-                                final String srcs = searchResult.sourcesJson;
+
+                            StringBuilder combinedContext = new StringBuilder();
+                            org.json.JSONArray mergedSources = new org.json.JSONArray();
+                            java.util.HashSet<String> seenUrls = new java.util.HashSet<>();
+                            StringBuilder displayQueries = new StringBuilder();
+
+                            for (int qIdx = 0; qIdx < maxQueries; qIdx++) {
+                                String sq = subQueries[qIdx].trim();
+                                if (sq.isEmpty()) continue;
+                                if (displayQueries.length() > 0) displayQueries.append(" | ");
+                                displayQueries.append(sq);
+
+                                String effRecency = WebSearchEngine.detectRecency(sq + " " + userText, explicitRecency);
+                                if (qIdx == 3 && effRecency.isEmpty()) {
+                                    effRecency = "w";
+                                }
+                                WebSearchEngine.SearchResult sr = WebSearchEngine.searchWithSources(sq, effRecency);
+                                if (sr.text != null && !sr.text.isEmpty()) {
+                                    if (maxQueries > 1) {
+                                        combinedContext.append("### Búsqueda: ").append(sq).append("\n");
+                                    }
+                                    combinedContext.append(sr.text).append("\n\n");
+                                }
+                                if (sr.sourcesJson != null && sr.sourcesJson.length() > 2) {
+                                    try {
+                                        org.json.JSONArray arr = new org.json.JSONArray(sr.sourcesJson);
+                                        for (int sIdx = 0; sIdx < arr.length() && mergedSources.length() < 8; sIdx++) {
+                                            org.json.JSONObject obj = arr.getJSONObject(sIdx);
+                                            String u = obj.optString("url", "");
+                                            if (!u.isEmpty() && seenUrls.add(u)) {
+                                                mergedSources.put(obj);
+                                            }
+                                        }
+                                    } catch (Exception ignored) {}
+                                }
+                            }
+
+                            if (mergedSources.length() > 0) {
+                                final String srcs = mergedSources.toString();
                                 mainHandler.post(() -> callback.onSourcesReady(srcs));
                             }
+                            String webContext = combinedContext.toString().trim();
                             String groundedPrompt = !webContext.isEmpty()
-                                    ? prompt + "\n\n[Resultados web actuales para \"" + cleanSearchQuery + "\" — prioriza estos datos sobre tu memoria interna y responde sin emitir etiquetas [[SEARCH:...]]]\n" + webContext
+                                    ? prompt + "\n\n[Resultados web actuales para \"" + displayQueries + "\" — prioriza estos datos sobre tu memoria interna y responde sin emitir etiquetas [[SEARCH:...]]]\n" + webContext
                                     : prompt + "\n\n[No se pudieron obtener resultados web en este momento; aclara si algún dato actual requiere verificación y no emitas etiquetas [[SEARCH:...]]].";
                             String secondPayload = hasFile
                                     ? GeminiNative.buildRequestPayloadWithFile(groundedPrompt, mimeType, base64Data, thinkingLevel, sysInstrNoSearch, false)
