@@ -54,6 +54,18 @@ La aplicación no incluye claves preconfiguradas ni servidores intermediarios. C
 - **Markdown y código nativo**: Soporte para encabezados, listas, negritas y bloques de código con resaltado de sintaxis y botón para copiar, todo procesado en memoria sin vistas web.
 - **Entrada por voz**: Reconocimiento de voz integrado tanto en la ventana flotante como en la aplicación principal.
 
+### Acciones reales del dispositivo (`DeviceActionExecutor`)
+- Ejecución de acciones nativas de Android mediante lenguaje natural:
+  - **Abrir aplicaciones** instaladas (detección automática de apps del launcher).
+  - **Linterna** (encender y apagar mediante `CameraManager`).
+  - **Alarmas y temporizadores** (usando la hora actual del dispositivo).
+  - **Ajustes del sistema** (Wi-Fi, Bluetooth, pantalla, sonido, batería, aplicaciones, ubicación, modo avión).
+  - **Volumen multimedia**, **marcador telefónico** y **apertura de enlaces**.
+
+### Búsqueda web en tiempo real y System Prompt personalizado
+- **Búsqueda web bajo demanda (`WebSearchEngine`)**: Activada automáticamente por la propia IA únicamente cuando necesita verificación factual o datos recientes, sin depender de palabras clave fijas y sin costo adicional de API.
+- **Instrucciones personalizadas (System Prompt)**: Campo editable en **Configuración de API** para definir el comportamiento y estilo de respuesta del asistente.
+
 ## Optimizaciones de rendimiento
 
 Para asegurar que la aplicación funcione a 60 FPS tanto en teléfonos económicos recientes como en hardware antiguo (GPUs Adreno 3xx, Mali-400/T6xx o PowerVR), se aplicaron los siguientes ajustes:
@@ -67,6 +79,10 @@ Para asegurar que la aplicación funcione a 60 FPS tanto en teléfonos económic
 3. **Memoria e interfaz**:
    - Miniaturas cargadas con submuestreo (`inSampleSize`) y almacenadas en un `LruCache` bajo formato `RGB_565` (la mitad de consumo en RAM respecto a `ARGB_8888`).
    - El parseo de Markdown y resaltado de sintaxis se guarda en caché por mensaje para no recalcularse al desplazar la lista.
+4. **Motor de búsqueda web (`WebSearchEngine`)**:
+   - `WebView` invisible bajo demanda con `setWillNotDraw(true)`, `LAYER_TYPE_NONE` y `RENDERER_PRIORITY_WAIVED` (API 26+).
+   - Pausa inmediata (`onPause()` / `pauseTimers()`) tras extraer el texto (0 % CPU en reposo) y auto-destrucción a los 60 segundos de inactividad.
+   - Caché TTL en memoria (5 minutos), extracción DOM dirigida con `TreeWalker` (evitando layout completo) y bloqueo de CSS, fuentes, imágenes y telemetría.
 
 ## Estructura del código
 
@@ -81,6 +97,8 @@ GeminiApp/
     ├── MainActivity.java                       # Actividad principal e historial
     ├── AssistantOverlayActivity.java           # Ventana flotante del asistente
     ├── ApiKeyManager.java / ApiKeyDialog.java  # Almacenamiento y diálogo de configuración de API Key
+    ├── DeviceActionExecutor.java               # Ejecución de acciones del sistema y System Prompt
+    ├── WebSearchEngine.java                    # Motor de búsqueda web optimizado bajo demanda
     ├── GeminiVoiceInteractionService.java      # Servicio de asistencia del sistema
     ├── GeminiVoiceInteractionSession.java      # Recepción de captura de pantalla del sistema
     ├── AssistantScreenshotHolder.java          # Referencia en memoria de la última captura
