@@ -1,6 +1,6 @@
 # Gemini Lite
 
-**Gemini Lite** es una alternativa gratuita y compatible con AOSP para contar con las funciones del asistente de Google en Android sin depender de la aplicación oficial ni de motores web pesados (`WebView` / Chromium).
+**Gemini Lite** es una alternativa gratuita y compatible con AOSP para contar con las funciones del asistente de Google en Android sin depender de la aplicación oficial ni de una interfaz basada en motores web pesados (toda la UI, el chat y los gráficos son 100 % nativos; el `WebView` del sistema solo se invoca de forma oculta y temporal cuando la IA necesita consultar datos en tiempo real).
 
 Incluso en teléfonos de gama de entrada actuales, el asistente oficial suele presentar tiempos de carga altos y un consumo excesivo de memoria debido a las capas web y servicios en segundo plano que utiliza. El objetivo de este proyecto es replicar el modo de funcionamiento práctico del asistente (invocación desde el sistema, lectura de pantalla, consultas con imágenes y chat continuo), pero no su interfaz original, reemplazándola por una implementación nativa en Java, C++17 (NDK) y OpenGL ES 2.0 capaz de correr con fluidez hasta en dispositivos del año 2014 (Android 5.0 / API 21+).
 
