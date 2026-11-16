@@ -949,16 +949,6 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         etPromptInput.setText("");
         clearAttachment();
 
-        // Create chat session in DB if starting a brand new conversation
-        if (currentChatId == null) {
-            String title = prompt.isEmpty() ? ("Archivo: " + attachedName) : (prompt.length() > 36 ? prompt.substring(0, 34) + "..." : prompt);
-            currentChatId = dbHelper.createChat(title);
-            loadChatSessions();
-        }
-
-        // Transition from Hero screen to active chat timeline
-        transitionToChat();
-
         int priorCount = chatMessages.size();
         if (attachedBase64 != null) {
             activeChatAttachmentBase64 = attachedBase64;
@@ -980,7 +970,6 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         }
         chatMessages.add(userMessage);
         chatAdapter.notifyItemInserted(chatMessages.size() - 1);
-        dbHelper.saveMessage(currentChatId, userMessage);
 
         // Add Gemini generating placeholder message
         String model = apiKeyManager.getModel();
@@ -991,13 +980,25 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         chatMessages.add(geminiPlaceholder);
         int geminiPos = chatMessages.size() - 1;
         chatAdapter.notifyItemInserted(geminiPos);
-        rvChatMessages.smoothScrollToPosition(geminiPos);
-        dbHelper.saveMessage(currentChatId, geminiPlaceholder);
 
-        String effectiveBase64 = (attachedBase64 != null) ? attachedBase64 : activeChatAttachmentBase64;
-        String effectiveMime = (attachedBase64 != null) ? attachedMime : activeChatAttachmentMime;
+        // Smooth transition from Hero screen to active chat timeline
+        transitionToChat();
+        rvChatMessages.scrollToPosition(geminiPos);
 
-        sendGeminiRequestForMessage(geminiPos, contextualPrompt, effectiveBase64, effectiveMime, model, thinkingLevel, modelLabel);
+        final String effectiveBase64 = (attachedBase64 != null) ? attachedBase64 : activeChatAttachmentBase64;
+        final String effectiveMime = (attachedBase64 != null) ? attachedMime : activeChatAttachmentMime;
+
+        // Defer disk I/O so the transition animation starts immediately without frame drops
+        rvChatMessages.post(() -> {
+            if (currentChatId == null) {
+                String title = prompt.isEmpty() ? ("Archivo: " + attachedName) : (prompt.length() > 36 ? prompt.substring(0, 34) + "..." : prompt);
+                currentChatId = dbHelper.createChat(title);
+                loadChatSessions();
+            }
+            dbHelper.saveMessage(currentChatId, userMessage);
+            dbHelper.saveMessage(currentChatId, geminiPlaceholder);
+            sendGeminiRequestForMessage(geminiPos, contextualPrompt, effectiveBase64, effectiveMime, model, thinkingLevel, modelLabel);
+        });
     }
 
     private void sendGeminiRequestForMessage(
@@ -1036,7 +1037,13 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
             @Override
             public void onStatusUpdate(String statusText) {
                 if (geminiPos >= 0 && geminiPos < chatMessages.size()) {
-                    chatMessages.get(geminiPos).setStatusLabel(statusText);
+                    String localized = statusText;
+                    if ("Buscando en la web...".equals(statusText)) {
+                        localized = getString(R.string.status_searching_web);
+                    } else if ("Pensando...".equals(statusText)) {
+                        localized = getString(R.string.status_thinking);
+                    }
+                    chatMessages.get(geminiPos).setStatusLabel(localized);
                     chatAdapter.notifyItemChanged(geminiPos, ChatAdapter.PAYLOAD_TEXT_STREAM);
                 }
             }
@@ -1048,7 +1055,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
                     return;
                 }
                 chatMessages.get(geminiPos).setStatusLabel(
-                        ChatMessage.formatThinkingDuration(System.currentTimeMillis() - requestStartMs));
+                        ChatMessage.formatThinkingDuration(MainActivity.this, System.currentTimeMillis() - requestStartMs));
                 String cleanText = DeviceActionExecutor.processAndExecuteActions(MainActivity.this, responseText);
                 streamTypewriterResponse(geminiPos, cleanText, thinkingLevel, modelLabel);
             }
@@ -1126,7 +1133,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
             ChatMessage target = chatMessages.get(targetPos);
             if (target.isGenerating()) {
                 target.setGenerating(false);
-                String stoppedText = target.getText() + " (Generación detenida)";
+                String stoppedText = target.getText() + " " + getString(R.string.generation_stopped_suffix);
                 target.setText(stoppedText);
                 chatAdapter.notifyItemChanged(targetPos);
                 if (currentChatId != null) {
@@ -1134,7 +1141,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
                 }
             }
         }
-        Toast.makeText(this, "Generación cancelada", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, getString(R.string.generation_cancelled), Toast.LENGTH_SHORT).show();
     }
 
     private void setGeneratingState(boolean generating) {
@@ -1154,15 +1161,72 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         }
     }
 
+    private android.animation.ValueAnimator starTransitionAnimator;
+
+    private void animateShaderStar(float fromScale, float toScale, float fromGlow, float toGlow, long durationMs) {
+        if (starTransitionAnimator != null) {
+            starTransitionAnimator.cancel();
+        }
+        starTransitionAnimator = android.animation.ValueAnimator.ofFloat(0f, 1f);
+        starTransitionAnimator.setDuration(durationMs);
+        starTransitionAnimator.setInterpolator(new android.view.animation.DecelerateInterpolator());
+        starTransitionAnimator.addUpdateListener(anim -> {
+            float t = (float) anim.getAnimatedValue();
+            GeminiNative.setStarScale(fromScale + (toScale - fromScale) * t);
+            GeminiNative.setGlowIntensity(fromGlow + (toGlow - fromGlow) * t);
+            if (glSurfaceView != null) {
+                glSurfaceView.requestRender();
+            }
+        });
+        starTransitionAnimator.start();
+    }
+
     private void transitionToChat() {
         if (heroContainer.getVisibility() == View.VISIBLE) {
-            heroContainer.setVisibility(View.GONE);
-            rvChatMessages.setVisibility(View.VISIBLE);
-            btnNewChat.setVisibility(View.VISIBLE);
+            float density = getResources().getDisplayMetrics().density;
+            android.view.animation.Interpolator easeOut = new android.view.animation.DecelerateInterpolator(1.6f);
 
-            // Turn off star shader during chat mode: saves 100% of star SDF & bloom fill rate!
-            GeminiNative.setStarScale(0.0f);
-            GeminiNative.setGlowIntensity(0.35f);
+            heroContainer.animate().cancel();
+            rvChatMessages.animate().cancel();
+            btnNewChat.animate().cancel();
+
+            // Prepare chat view underneath so individual items animate from bottom to top
+            rvChatMessages.setAlpha(1f);
+            rvChatMessages.setTranslationY(0f);
+            rvChatMessages.setVisibility(View.VISIBLE);
+
+            // Fade & scale in the New Chat button
+            btnNewChat.setAlpha(0f);
+            btnNewChat.setScaleX(0.85f);
+            btnNewChat.setScaleY(0.85f);
+            btnNewChat.setVisibility(View.VISIBLE);
+            btnNewChat.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(220)
+                    .setInterpolator(easeOut)
+                    .start();
+
+            // Fade & glide out the Hero greeting
+            heroContainer.animate()
+                    .alpha(0f)
+                    .translationY(-20f * density)
+                    .scaleX(0.96f)
+                    .scaleY(0.96f)
+                    .setDuration(200)
+                    .setInterpolator(easeOut)
+                    .withEndAction(() -> {
+                        heroContainer.setVisibility(View.GONE);
+                        heroContainer.setAlpha(1f);
+                        heroContainer.setTranslationY(0f);
+                        heroContainer.setScaleX(1f);
+                        heroContainer.setScaleY(1f);
+                    })
+                    .start();
+
+            // Smoothly shrink star shader during transition
+            animateShaderStar(1.0f, 0.0f, 1.0f, 0.35f, 260);
         }
     }
 
@@ -1179,13 +1243,34 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         chatMessages.clear();
         chatAdapter.notifyDataSetChanged();
 
+        float density = getResources().getDisplayMetrics().density;
+        android.view.animation.Interpolator easeOut = new android.view.animation.DecelerateInterpolator(1.6f);
+
+        heroContainer.animate().cancel();
+        rvChatMessages.animate().cancel();
+        btnNewChat.animate().cancel();
+
         rvChatMessages.setVisibility(View.GONE);
-        heroContainer.setVisibility(View.VISIBLE);
+        rvChatMessages.setAlpha(1f);
+        rvChatMessages.setTranslationY(0f);
         btnNewChat.setVisibility(View.GONE);
 
-        // Restore star in C++ shader
-        GeminiNative.setStarScale(1.0f);
-        GeminiNative.setGlowIntensity(1.0f);
+        heroContainer.setAlpha(0f);
+        heroContainer.setTranslationY(14f * density);
+        heroContainer.setScaleX(0.97f);
+        heroContainer.setScaleY(0.97f);
+        heroContainer.setVisibility(View.VISIBLE);
+        heroContainer.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(230)
+                .setInterpolator(easeOut)
+                .start();
+
+        // Smoothly restore star in C++ shader
+        animateShaderStar(0.0f, 1.0f, 0.35f, 1.0f, 260);
     }
 
     @Override

@@ -127,16 +127,25 @@ public class ChatMessage {
         this.statusLabel = statusLabel;
     }
 
-    public static String formatThinkingDuration(long elapsedMs) {
+    public static String formatThinkingDuration(android.content.Context context, long elapsedMs) {
         long totalSeconds = Math.max(0, elapsedMs / 1000);
         long minutes = totalSeconds / 60;
         long seconds = totalSeconds % 60;
+        if (context != null) {
+            return context.getString(R.string.thought_for_format, minutes, seconds);
+        }
         return String.format(java.util.Locale.ROOT, "Pensó por %d:%02d", minutes, seconds);
+    }
+
+    public static String formatThinkingDuration(long elapsedMs) {
+        return formatThinkingDuration(null, elapsedMs);
     }
 
     public long getTimestamp() {
         return timestamp;
     }
+
+    private boolean playedEntrance = false;
 
     public String getSourcesJson() {
         return sourcesJson;
@@ -144,5 +153,13 @@ public class ChatMessage {
 
     public void setSourcesJson(String sourcesJson) {
         this.sourcesJson = sourcesJson;
+    }
+
+    public boolean hasPlayedEntrance() {
+        return playedEntrance;
+    }
+
+    public void setPlayedEntrance(boolean playedEntrance) {
+        this.playedEntrance = playedEntrance;
     }
 }

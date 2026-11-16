@@ -58,7 +58,7 @@
                 android:id="@+id/tvThinkingLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Pensando..."
+                android:text="@string/status_thinking"
                 android:textColor="@color/gemini_cyan"
                 android:textSize="12sp" />
         </LinearLayout>

@@ -48,7 +48,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Respuestas más rápidas"
+                android:text="@string/model_fast_desc"
                 android:textColor="@color/text_hint"
                 android:textSize="12sp"
                 android:layout_marginTop="2dp" />
@@ -96,7 +96,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Asistencia general"
+                android:text="@string/model_general_desc"
                 android:textColor="@color/text_hint"
                 android:textSize="12sp"
                 android:layout_marginTop="2dp" />
@@ -142,7 +142,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Búsqueda Web (Google)"
+                android:text="@string/web_search_menu_title"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -150,7 +150,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Datos en tiempo real"
+                android:text="@string/web_search_menu_desc"
                 android:textColor="@color/text_hint"
                 android:textSize="11sp"
                 android:layout_marginTop="2dp" />

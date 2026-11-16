@@ -49,8 +49,10 @@ La aplicación no incluye claves preconfiguradas ni servidores intermediarios. C
 - Manejo conjunto de imagen y texto en el mismo mensaje, manteniendo la imagen activa en la sesión para poder hacer preguntas adicionales sobre ella sin tener que subirla dos veces.
 
 ### Interfaz, historial y renderizado
-- **Fondo en OpenGL ES 2.0**: Shader escrito en C++ con respuesta al tacto, adaptado a pantalla completa y recortes de cámara (*notch*).
-- **Historial local en SQLite**: Guardado automático de conversaciones y referencias de archivos adjuntos en el menú lateral.
+- **Fondo en OpenGL ES 2.0**: Shader escrito en C++ con respuesta al tacto, adaptado a pantalla completa y recortes de cámara (*notch*), con interpolación progresiva al pasar al chat.
+- **Transiciones y animaciones fluidas**: Transición animada entre la pantalla de saludo y el chat, con entrada en cascada de abajo hacia arriba para el mensaje, el logo de Gemini y el indicador de pensamiento.
+- **Soporte multi-idioma automático**: Detección automática del idioma del sistema con traducción completa de la interfaz y respuestas en **español**, **inglés**, **portugués**, **portugués (Brasil)**, **ruso** y **francés**.
+- **Historial local en SQLite**: Guardado automático de conversaciones, fuentes web consultadas y referencias de archivos adjuntos en el menú lateral.
 - **Markdown y código nativo**: Soporte para encabezados, listas, negritas y bloques de código con resaltado de sintaxis y botón para copiar, todo procesado en memoria sin vistas web.
 - **Entrada por voz**: Reconocimiento de voz integrado tanto en la ventana flotante como en la aplicación principal.
 

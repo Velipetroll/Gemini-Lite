@@ -70,10 +70,59 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         ChatMessage message = messages.get(position);
+        float density = context.getResources().getDisplayMetrics().density;
+        android.view.animation.Interpolator slideUpInterpolator =
+                new android.view.animation.DecelerateInterpolator(1.8f);
+
         if (holder instanceof UserViewHolder) {
             ((UserViewHolder) holder).bind(message);
+            if (!message.hasPlayedEntrance()) {
+                message.setPlayedEntrance(true);
+                holder.itemView.animate().cancel();
+                holder.itemView.setAlpha(0f);
+                holder.itemView.setTranslationY(42f * density);
+                holder.itemView.animate()
+                        .alpha(1f)
+                        .translationY(0f)
+                        .setDuration(280)
+                        .setInterpolator(slideUpInterpolator)
+                        .start();
+            } else {
+                holder.itemView.setAlpha(1f);
+                holder.itemView.setTranslationY(0f);
+            }
         } else if (holder instanceof GeminiViewHolder) {
-            ((GeminiViewHolder) holder).bind(message, position);
+            GeminiViewHolder gh = (GeminiViewHolder) holder;
+            gh.bind(message, position);
+            if (!message.hasPlayedEntrance() && message.isGenerating()) {
+                message.setPlayedEntrance(true);
+                gh.ivGeminiSparkle.animate().cancel();
+                gh.ivGeminiSparkle.setAlpha(0f);
+                gh.ivGeminiSparkle.setTranslationY(36f * density);
+                gh.ivGeminiSparkle.animate()
+                        .alpha(1f)
+                        .translationY(0f)
+                        .setStartDelay(70)
+                        .setDuration(280)
+                        .setInterpolator(slideUpInterpolator)
+                        .start();
+
+                gh.layoutThinking.animate().cancel();
+                gh.layoutThinking.setAlpha(0f);
+                gh.layoutThinking.setTranslationY(36f * density);
+                gh.layoutThinking.animate()
+                        .alpha(1f)
+                        .translationY(0f)
+                        .setStartDelay(130)
+                        .setDuration(300)
+                        .setInterpolator(slideUpInterpolator)
+                        .start();
+            } else {
+                gh.ivGeminiSparkle.setAlpha(1f);
+                gh.ivGeminiSparkle.setTranslationY(0f);
+                gh.layoutThinking.setAlpha(1f);
+                gh.layoutThinking.setTranslationY(0f);
+            }
         }
     }
 
@@ -399,7 +448,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 header.addView(ivIcon, iconLp);
 
                 TextView tvTitle = new TextView(context);
-                tvTitle.setText("Fuentes consultadas");
+                tvTitle.setText(context.getString(R.string.sources_title));
                 tvTitle.setTextColor(android.graphics.Color.parseColor("#E3E3E3"));
                 tvTitle.setTextSize(16f);
                 tvTitle.setTypeface(null, android.graphics.Typeface.BOLD);
@@ -481,7 +530,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     textCol.addView(tvItemTitle);
 
                     TextView tvSub = new TextView(context);
-                    tvSub.setText((host != null && !host.isEmpty()) ? host : "Abrir enlace web");
+                    tvSub.setText((host != null && !host.isEmpty()) ? host : context.getString(R.string.sources_open_link));
                     tvSub.setTextColor(android.graphics.Color.parseColor("#9AA0A6"));
                     tvSub.setTextSize(12f);
                     tvSub.setMaxLines(1);
@@ -555,10 +604,10 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 layoutThinking.setVisibility(View.VISIBLE);
                 layoutThinking.setBackgroundResource(R.drawable.bg_gemini_thinking_pill);
                 if (pbThinking != null) pbThinking.setVisibility(View.VISIBLE);
-                tvThinkingLabel.setText(status != null && !status.isEmpty() ? status : "Pensando...");
+                tvThinkingLabel.setText(status != null && !status.isEmpty() ? status : context.getString(R.string.status_thinking));
                 tvThinkingLabel.setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.gemini_cyan));
                 tvThinkingLabel.setAlpha(1.0f);
-            } else if (status != null && status.startsWith("Pensó por ")) {
+            } else if (!message.isGenerating() && status != null && !status.isEmpty()) {
                 layoutThinking.setVisibility(View.VISIBLE);
                 layoutThinking.setBackground(null);
                 layoutThinking.setPadding(0, 0, 0, 0);
@@ -612,7 +661,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 if (clipboard != null) {
                     android.content.ClipData clip = android.content.ClipData.newPlainText("Gemini", message.getText());
                     clipboard.setPrimaryClip(clip);
-                    Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, context.getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -628,7 +677,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 Intent shareIntent = new Intent(Intent.ACTION_SEND);
                 shareIntent.setType("text/plain");
                 shareIntent.putExtra(Intent.EXTRA_TEXT, message.getText());
-                context.startActivity(Intent.createChooser(shareIntent, "Compartir respuesta de Gemini"));
+                context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share_response_title)));
             });
         }
     }

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gemini Lite</string>
+    <string name="gemini_title">Gemini Lite</string>
+    <string name="gemini_model_default">3.5 Flash Lite (Medium)</string>
+
+    <string name="greeting_hola">Привет,</string>
+    <string name="greeting_question">Чем я могу помочь сегодня?</string>
+
+    <string name="prompt_placeholder">Спросите Gemini...</string>
+    <string name="disclaimer">Gemini может допускать ошибки. Проверяйте важную информацию.</string>
+
+    <!-- Suggestions -->
+    <string name="suggestion_1_title">Создать изображение</string>
+    <string name="suggestion_1_desc">Генерация концептов и иллюстраций</string>
+    <string name="suggestion_1_prompt">Создай футуристическую иллюстрацию парящего города на закате в неоновом стиле</string>
+
+    <string name="suggestion_2_title">Написать текст</string>
+    <string name="suggestion_2_desc">Составление писем, историй или резюме</string>
+    <string name="suggestion_2_prompt">Напиши официальное и убедительное письмо с предложением о сотрудничестве в технологическом проекте</string>
+
+    <string name="suggestion_3_title">Спланировать идею</string>
+    <string name="suggestion_3_desc">Структурирование проектов, поездок и целей</string>
+    <string name="suggestion_3_prompt">Составь 5-дневный маршрут поездки в Японию с акцентом на культуру и кухню</string>
+
+    <string name="suggestion_4_title">Объяснить код</string>
+    <string name="suggestion_4_desc">Отладка ошибок и оптимизация алгоритмов</string>
+    <string name="suggestion_4_prompt">Объясни, как работает алгоритм поиска A* на C++, с практическим примером</string>
+
+    <!-- Assistant Chips -->
+    <string name="chip_summarize_screen">Кратко об этом экране</string>
+    <string name="chip_summarize_screen_prompt">Чётко и кратко перескажи содержимое этого снимка экрана.</string>
+    <string name="chip_translate_screen">Перевести экран</string>
+    <string name="chip_translate_screen_prompt">Переведи весь видимый текст на этом снимке экрана на мой язык.</string>
+    <string name="chip_explain_concept">Быстро объясни понятие</string>
+    <string name="chip_write_message">Напиши сообщение</string>
+    <string name="chip_whats_new">Что нового сегодня?</string>
+
+    <!-- Drawer & Navigation -->
+    <string name="new_chat">Новый чат</string>
+    <string name="recent_chats">Недавние</string>
+    <string name="no_recent_chats">Нет недавних чатов</string>
+    <string name="api_settings_menu">Настройки API</string>
+
+    <!-- Attach & Code -->
+    <string name="attach_camera">Камера</string>
+    <string name="attach_files">Файлы</string>
+    <string name="attach_screenshot">Снимок экрана</string>
+    <string name="btn_copy">Копировать</string>
+    <string name="btn_paste">Вставить</string>
+    <string name="btn_close">Закрыть</string>
+
+    <!-- Models & Thinking -->
+    <string name="model_fast_desc">Быстрые ответы</string>
+    <string name="model_general_desc">Общая помощь</string>
+    <string name="web_search_menu_title">Веб-поиск (Google)</string>
+    <string name="web_search_menu_desc">Данные в реальном времени</string>
+    <string name="thinking_level_title">Уровень размышления</string>
+    <string name="thinking_high">Высокий (Глубокий)</string>
+    <string name="thinking_medium">Средний</string>
+    <string name="thinking_low">Низкий</string>
+    <string name="thinking_minimal">Минимальный (Быстрый)</string>
+
+    <!-- Settings Dialog -->
+    <string name="settings_title">Настройки Gemini</string>
+    <string name="settings_subtitle">Введите ваш API Key из Google AI Studio для прямой работы с Gemini.</string>
+    <string name="api_key_label">Google AI API Key</string>
+    <string name="api_key_hint">AIzaSy...</string>
+    <string name="btn_test_connection">Проверить соединение</string>
+    <string name="btn_save">Сохранить</string>
+    <string name="link_get_api_key">Получить бесплатный API Key в Google AI Studio</string>
+    <string name="default_model_title">Модель по умолчанию</string>
+    <string name="default_model_desc">Используется при запуске и в Ассистенте</string>
+    <string name="web_search_Realtime_title">Веб-поиск в реальном времени (Google)</string>
+    <string name="web_search_Realtime_desc">Позволяет искать актуальную информацию в интернете</string>
+    <string name="custom_instructions_title">Пользовательские инструкции (System Prompt)</string>
+    <string name="custom_instructions_hint">Напр.: Всегда отвечай кратко и по делу...</string>
+
+    <!-- Chat & Search -->
+    <string name="status_thinking">Думает...</string>
+    <string name="status_searching_web">Поиск в интернете...</string>
+    <string name="thought_for_format">Думал %1$d:%2$02d</string>
+    <string name="sources_title">Использованные источники</string>
+    <string name="sources_open_link">Открыть веб-ссылку</string>
+    <string name="copied_to_clipboard">Скопировано в буфер обмена</string>
+    <string name="share_response_title">Поделиться ответом Gemini</string>
+    <string name="generation_cancelled">Генерация отменена</string>
+    <string name="generation_stopped_suffix">(Генерация остановлена)</string>
+</resources>

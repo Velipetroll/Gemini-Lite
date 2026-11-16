@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gemini Lite</string>
+    <string name="gemini_title">Gemini Lite</string>
+    <string name="gemini_model_default">3.5 Flash Lite (Medium)</string>
+
+    <string name="greeting_hola">Hola,</string>
+    <string name="greeting_question">¿En qué puedo ayudarte hoy?</string>
+
+    <string name="prompt_placeholder">Pregúntale a Gemini...</string>
+    <string name="disclaimer">Gemini puede cometer errores. Verifica la información importante.</string>
+
+    <!-- Suggestions -->
+    <string name="suggestion_1_title">Crear imagen</string>
+    <string name="suggestion_1_desc">Genera conceptos e ilustraciones</string>
+    <string name="suggestion_1_prompt">Crea una ilustración futurista de una ciudad flotante en el atardecer con estilo neón</string>
+
+    <string name="suggestion_2_title">Escribir un texto</string>
+    <string name="suggestion_2_desc">Redacta correos, historias o resúmenes</string>
+    <string name="suggestion_2_prompt">Escribe un correo formal y persuasivo solicitando colaboración en un proyecto tecnológico</string>
+
+    <string name="suggestion_3_title">Planear una idea</string>
+    <string name="suggestion_3_desc">Estructura proyectos, viajes y metas</string>
+    <string name="suggestion_3_prompt">Planifica un itinerario de 5 días para visitar Japón con un enfoque en cultura y gastronomía</string>
+
+    <string name="suggestion_4_title">Explicar código</string>
+    <string name="suggestion_4_desc">Depura errores y optimiza algoritmos</string>
+    <string name="suggestion_4_prompt">Explica cómo funciona el algoritmo de búsqueda A* en C++ con un ejemplo práctico</string>
+
+    <!-- Assistant Chips -->
+    <string name="chip_summarize_screen">Resumir esta pantalla</string>
+    <string name="chip_summarize_screen_prompt">Resume de forma clara y concisa el contenido que aparece en esta captura de pantalla.</string>
+    <string name="chip_translate_screen">Traducir pantalla</string>
+    <string name="chip_translate_screen_prompt">Traduce todo el texto visible en esta captura de pantalla a mi idioma.</string>
+    <string name="chip_explain_concept">Explica un concepto rápido</string>
+    <string name="chip_write_message">Escribe un mensaje</string>
+    <string name="chip_whats_new">¿Qué hay de nuevo hoy?</string>
+
+    <!-- Drawer & Navigation -->
+    <string name="new_chat">Nuevo chat</string>
+    <string name="recent_chats">Recientes</string>
+    <string name="no_recent_chats">No hay chats recientes</string>
+    <string name="api_settings_menu">Configuración de API</string>
+
+    <!-- Attach & Code -->
+    <string name="attach_camera">Cámara</string>
+    <string name="attach_files">Archivos</string>
+    <string name="attach_screenshot">Captura de pantalla</string>
+    <string name="btn_copy">Copiar</string>
+    <string name="btn_paste">Pegar</string>
+    <string name="btn_close">Cerrar</string>
+
+    <!-- Models & Thinking -->
+    <string name="model_fast_desc">Respuestas más rápidas</string>
+    <string name="model_general_desc">Asistencia general</string>
+    <string name="web_search_menu_title">Búsqueda Web (Google)</string>
+    <string name="web_search_menu_desc">Datos en tiempo real</string>
+    <string name="thinking_level_title">Nivel de pensamiento</string>
+    <string name="thinking_high">Alto (Profundo)</string>
+    <string name="thinking_medium">Medio</string>
+    <string name="thinking_low">Bajo</string>
+    <string name="thinking_minimal">Mínimo (Rápido)</string>
+
+    <!-- Settings Dialog -->
+    <string name="settings_title">Configuración de Gemini</string>
+    <string name="settings_subtitle">Ingresa tu API Key de Google AI Studio para usar Gemini directamente.</string>
+    <string name="api_key_label">Google AI API Key</string>
+    <string name="api_key_hint">AIzaSy...</string>
+    <string name="btn_test_connection">Probar Conexión</string>
+    <string name="btn_save">Guardar</string>
+    <string name="link_get_api_key">Obtener API Key gratis en Google AI Studio</string>
+    <string name="default_model_title">Modelo predeterminado</string>
+    <string name="default_model_desc">Se usa al iniciar la app y en el Asistente</string>
+    <string name="web_search_Realtime_title">Búsqueda web en tiempo real (Google)</string>
+    <string name="web_search_Realtime_desc">Permite consultar información actual de internet</string>
+    <string name="custom_instructions_title">Instrucciones personalizadas (System Prompt)</string>
+    <string name="custom_instructions_hint">Ej: Responde siempre de forma directa y breve...</string>
+
+    <!-- Chat & Search -->
+    <string name="status_thinking">Pensando...</string>
+    <string name="status_searching_web">Buscando en la web...</string>
+    <string name="thought_for_format">Pensó por %1$d:%2$02d</string>
+    <string name="sources_title">Fuentes consultadas</string>
+    <string name="sources_open_link">Abrir enlace web</string>
+    <string name="copied_to_clipboard">Copiado al portapapeles</string>
+    <string name="share_response_title">Compartir respuesta de Gemini</string>
+    <string name="generation_cancelled">Generación cancelada</string>
+    <string name="generation_stopped_suffix">(Generación detenida)</string>
+</resources>

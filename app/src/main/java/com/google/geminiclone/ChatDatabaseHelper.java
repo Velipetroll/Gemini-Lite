@@ -223,6 +223,7 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
                         msg.setSourcesJson(sourcesJson);
                     }
                 }
+                msg.setPlayedEntrance(true);
                 list.add(msg);
             }
             cursor.close();

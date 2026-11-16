@@ -339,13 +339,13 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
 
         boolean hasScreenContext = AssistantScreenshotHolder.get() != null || isVoiceAssistantTrigger(getIntent());
         if (hasScreenContext) {
-            setupSuggestionChip(chip1, "Resumir esta pantalla", "Resume lo que aparece en esta pantalla", true);
-            setupSuggestionChip(chip2, "Traducir pantalla", "Traduce al español el texto de esta pantalla", true);
+            setupSuggestionChip(chip1, getString(R.string.chip_summarize_screen), getString(R.string.chip_summarize_screen_prompt), true);
+            setupSuggestionChip(chip2, getString(R.string.chip_translate_screen), getString(R.string.chip_translate_screen_prompt), true);
         } else {
-            setupSuggestionChip(chip1, "¿Qué hay de nuevo hoy?", "¿Qué hay de nuevo hoy?", false);
-            setupSuggestionChip(chip2, "Explica un concepto rápido", "Explica un concepto rápido", false);
+            setupSuggestionChip(chip1, getString(R.string.chip_whats_new), getString(R.string.chip_whats_new), false);
+            setupSuggestionChip(chip2, getString(R.string.chip_explain_concept), getString(R.string.chip_explain_concept), false);
         }
-        setupSuggestionChip(chip3, "Escribe un mensaje breve", "Escribe un mensaje breve", false);
+        setupSuggestionChip(chip3, getString(R.string.chip_write_message), getString(R.string.chip_write_message), false);
     }
 
     private void setupSuggestionChip(TextView chip, String label, String promptText, boolean attachScreen) {
@@ -728,7 +728,13 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
             @Override
             public void onStatusUpdate(String statusText) {
                 if (geminiPos >= 0 && geminiPos < chatMessages.size()) {
-                    chatMessages.get(geminiPos).setStatusLabel(statusText);
+                    String localized = statusText;
+                    if ("Buscando en la web...".equals(statusText)) {
+                        localized = getString(R.string.status_searching_web);
+                    } else if ("Pensando...".equals(statusText)) {
+                        localized = getString(R.string.status_thinking);
+                    }
+                    chatMessages.get(geminiPos).setStatusLabel(localized);
                     chatAdapter.notifyItemChanged(geminiPos, ChatAdapter.PAYLOAD_TEXT_STREAM);
                 }
             }
@@ -740,7 +746,7 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
                     return;
                 }
                 chatMessages.get(geminiPos).setStatusLabel(
-                        ChatMessage.formatThinkingDuration(System.currentTimeMillis() - requestStartMs));
+                        ChatMessage.formatThinkingDuration(AssistantOverlayActivity.this, System.currentTimeMillis() - requestStartMs));
                 String cleanText = DeviceActionExecutor.processAndExecuteActions(AssistantOverlayActivity.this, responseText);
                 streamTypewriterResponse(geminiPos, cleanText, thinkingLevel, modelLabel);
             }
@@ -816,7 +822,7 @@ public class AssistantOverlayActivity extends AppCompatActivity implements ChatA
             if (targetMsg.isGenerating()) {
                 targetMsg.setGenerating(false);
                 if (targetMsg.getText() == null || targetMsg.getText().isEmpty()) {
-                    targetMsg.setText("(Respuesta detenida)");
+                    targetMsg.setText(getString(R.string.generation_stopped_suffix));
                 }
                 chatAdapter.notifyItemChanged(targetPos);
                 if (currentChatId != null) {

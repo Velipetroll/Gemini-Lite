@@ -72,7 +72,7 @@
             android:id="@+id/btnPasteKey"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Pegar"
+            android:text="@string/btn_paste"
             android:textColor="@color/gemini_blue"
             android:textSize="13sp"
             android:textStyle="bold"
@@ -135,7 +135,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Modelo predeterminado"
+        android:text="@string/default_model_title"
         android:textColor="@color/text_secondary"
         android:textSize="13sp"
         android:textStyle="bold"
@@ -154,7 +154,7 @@
             android:id="@+id/tvDefaultModelHint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Se usa al iniciar la app y en el Asistente"
+            android:text="@string/default_model_desc"
             android:textColor="@color/text_hint"
             android:textSize="11sp"
             android:layout_marginBottom="4dp" />
@@ -195,7 +195,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Nivel de pensamiento"
+            android:text="@string/thinking_level_title"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"
             android:layout_marginBottom="2dp" />
@@ -271,7 +271,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Búsqueda web en tiempo real (Google)"
+                android:text="@string/web_search_Realtime_title"
                 android:textColor="@color/text_primary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -279,7 +279,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Permite consultar información actual de internet"
+                android:text="@string/web_search_Realtime_desc"
                 android:textColor="@color/text_hint"
                 android:textSize="11sp"
                 android:layout_marginTop="2dp" />
@@ -296,7 +296,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Instrucciones personalizadas (System Prompt)"
+        android:text="@string/custom_instructions_title"
         android:textColor="@color/text_secondary"
         android:textSize="13sp"
         android:textStyle="bold"
@@ -310,7 +310,7 @@
         android:background="@drawable/bg_suggestion_card"
         android:paddingHorizontal="12dp"
         android:paddingVertical="10dp"
-        android:hint="Ej: Responde siempre de forma directa y breve..."
+        android:hint="@string/custom_instructions_hint"
         android:textColorHint="@color/text_hint"
         android:textColor="@color/text_primary"
         android:textSize="13sp"
