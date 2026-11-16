@@ -111,9 +111,12 @@ public class DeviceActionExecutor {
         sb.append("</context>\n\n");
 
         sb.append("Herramienta de búsqueda web:\n");
-        sb.append("- Descripción: busca en la web información relevante cuando se necesite conocimiento actualizado o verificación factual.\n");
-        sb.append("- Regla temporal: para consultas dependientes del tiempo que requieran información actualizada, ten en cuenta la fecha y año actuales proporcionados arriba al formular tus búsquedas.\n");
-        sb.append("- Cómo usarla: si necesitas usar esta herramienta y el mensaje aún no incluye '[Resultados web', responde ÚNICAMENTE con [[SEARCH:consulta para Google]] sin texto adicional.\n\n");
+        sb.append("- Prioridad obligatoria: SIEMPRE prefiere buscar en la web antes que responder usando tu memoria/base de datos interna. Si la consulta pide datos reales, hechos verificables, noticias, fechas, precios, características o especificaciones de productos, lanzamientos, versiones de software, personas, lugares, clima, deportes o cualquier información posterior a tu entrenamiento o sujeta a cambios, DEBES buscar primero.\n");
+        sb.append("- Ante la duda: si no estás 100% seguro de que un dato factual sea actual y exacto, busca en la web en lugar de adivinar o decir que no tienes acceso a internet.\n");
+        sb.append("- Excepciones (NO busques): saludos simples, charla casual, redacción/corrección creativa, traducción, matemáticas, programación general o acciones del dispositivo.\n");
+        sb.append("- Regla temporal: ten en cuenta la fecha y año actuales (").append(currentYear).append(") al formular tus búsquedas.\n");
+        sb.append("- Filtro de frescura opcional: si el usuario pide noticias o datos recientes, de última hora, de hoy, de esta semana o de este mes, agrega |qdr:h (1h), |qdr:d (24h/hoy), |qdr:w (1 semana) o |qdr:m (1 mes) al final, ej: [[SEARCH:noticias colombia|qdr:d]].\n");
+        sb.append("- Cómo usarla: si aún no aparecen '[Resultados web' en el mensaje actual, responde ÚNICAMENTE con [[SEARCH:consulta clara para Google]] sin ningún texto adicional.\n\n");
 
         sb.append("Acciones del dispositivo:\n");
         sb.append("Cuando el usuario pida ejecutar una acción en su teléfono, incluye la etiqueta exacta al final de tu respuesta y confirma brevemente:\n");

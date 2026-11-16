@@ -6,8 +6,10 @@ public class ChatMessage {
     private String text;
     private final boolean isUser;
     private boolean isGenerating;
+    private String sourcesJson;
     private String thinkingLevel;
     private String modelName;
+    private transient String statusLabel;
     private final long timestamp;
 
     // Optional File/Image Attachment
@@ -117,7 +119,30 @@ public class ChatMessage {
         this.modelName = modelName;
     }
 
+    public String getStatusLabel() {
+        return statusLabel;
+    }
+
+    public void setStatusLabel(String statusLabel) {
+        this.statusLabel = statusLabel;
+    }
+
+    public static String formatThinkingDuration(long elapsedMs) {
+        long totalSeconds = Math.max(0, elapsedMs / 1000);
+        long minutes = totalSeconds / 60;
+        long seconds = totalSeconds % 60;
+        return String.format(java.util.Locale.ROOT, "Pensó por %d:%02d", minutes, seconds);
+    }
+
     public long getTimestamp() {
         return timestamp;
+    }
+
+    public String getSourcesJson() {
+        return sourcesJson;
+    }
+
+    public void setSourcesJson(String sourcesJson) {
+        this.sourcesJson = sourcesJson;
     }
 }

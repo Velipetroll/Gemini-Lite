@@ -9,6 +9,8 @@ public class ApiKeyManager {
     private static final String KEY_API_KEY = "gemini_api_key";
     private static final String KEY_MODEL = "gemini_model";
     private static final String KEY_THINKING_LEVEL = "gemini_thinking_level";
+    private static final String KEY_DEFAULT_MODEL = "gemini_default_model";
+    private static final String KEY_DEFAULT_THINKING = "gemini_default_thinking_level";
     private static final String KEY_WEB_SEARCH = "gemini_web_search";
     private static final String KEY_SYSTEM_PROMPT = "gemini_system_prompt";
 
@@ -20,8 +22,8 @@ public class ApiKeyManager {
     public static final String THINKING_LOW = "low";
     public static final String THINKING_MINIMAL = "minimal";
 
-    public static final String DEFAULT_MODEL = MODEL_38_FLASH;
-    public static final String DEFAULT_THINKING = THINKING_HIGH;
+    public static final String DEFAULT_MODEL = MODEL_35_FLASH_LITE;
+    public static final String DEFAULT_THINKING = THINKING_MEDIUM;
 
     private final SharedPreferences prefs;
 
@@ -58,49 +60,89 @@ public class ApiKeyManager {
         prefs.edit().putString(KEY_SYSTEM_PROMPT, systemPrompt != null ? systemPrompt.trim() : "").apply();
     }
 
-    public String getModel() {
-        String model = prefs.getString(KEY_MODEL, DEFAULT_MODEL);
-        // Ensure only the two requested models are valid
+    private String normalizeModel(String model) {
         if (!MODEL_38_FLASH.equals(model) && !MODEL_35_FLASH_LITE.equals(model)) {
             return DEFAULT_MODEL;
         }
         return model;
     }
 
-    public void setModel(String model) {
-        if (!MODEL_38_FLASH.equals(model) && !MODEL_35_FLASH_LITE.equals(model)) {
-            model = DEFAULT_MODEL;
+    private String normalizeThinkingLevel(String level, String model) {
+        if (level == null || level.isEmpty()
+                || (!THINKING_HIGH.equals(level) && !THINKING_MEDIUM.equals(level)
+                && !THINKING_LOW.equals(level) && !THINKING_MINIMAL.equals(level))) {
+            level = DEFAULT_THINKING;
         }
-        // Minimal is only allowed for Flash Lite: if switching to 3.8 Flash, adjust thinking
-        if (MODEL_38_FLASH.equals(model) && THINKING_MINIMAL.equals(getThinkingLevel())) {
-            setThinkingLevel(THINKING_HIGH);
-        }
-        prefs.edit().putString(KEY_MODEL, model).apply();
-    }
-
-    public String getThinkingLevel() {
-        String level = prefs.getString(KEY_THINKING_LEVEL, DEFAULT_THINKING);
-        if (MODEL_38_FLASH.equals(getModel()) && THINKING_MINIMAL.equals(level)) {
-            return THINKING_HIGH;
+        // Minimal thinking is only supported on 3.5 Flash Lite
+        if (THINKING_MINIMAL.equals(level) && !MODEL_35_FLASH_LITE.equals(model)) {
+            return DEFAULT_THINKING;
         }
         return level;
     }
 
+    public String getDefaultModel() {
+        return normalizeModel(prefs.getString(KEY_DEFAULT_MODEL, DEFAULT_MODEL));
+    }
+
+    public String getDefaultThinkingLevel() {
+        String defaultModel = getDefaultModel();
+        return normalizeThinkingLevel(prefs.getString(KEY_DEFAULT_THINKING, DEFAULT_THINKING), defaultModel);
+    }
+
+    public void setDefaultModelAndThinking(String model, String thinkingLevel) {
+        String validModel = normalizeModel(model);
+        String validThinking = normalizeThinkingLevel(thinkingLevel, validModel);
+        prefs.edit()
+                .putString(KEY_DEFAULT_MODEL, validModel)
+                .putString(KEY_DEFAULT_THINKING, validThinking)
+                .putString(KEY_MODEL, validModel)
+                .putString(KEY_THINKING_LEVEL, validThinking)
+                .apply();
+    }
+
+    public void applyDefaultModel() {
+        String defaultModel = getDefaultModel();
+        String defaultThinking = getDefaultThinkingLevel();
+        prefs.edit()
+                .putString(KEY_MODEL, defaultModel)
+                .putString(KEY_THINKING_LEVEL, defaultThinking)
+                .apply();
+    }
+
+    public String getModel() {
+        return normalizeModel(prefs.getString(KEY_MODEL, DEFAULT_MODEL));
+    }
+
+    public void setModel(String model) {
+        String validModel = normalizeModel(model);
+        SharedPreferences.Editor editor = prefs.edit().putString(KEY_MODEL, validModel);
+        if (MODEL_38_FLASH.equals(validModel) && THINKING_MINIMAL.equals(getThinkingLevel())) {
+            editor.putString(KEY_THINKING_LEVEL, DEFAULT_THINKING);
+        }
+        editor.apply();
+    }
+
+    public String getThinkingLevel() {
+        return normalizeThinkingLevel(prefs.getString(KEY_THINKING_LEVEL, DEFAULT_THINKING), getModel());
+    }
+
     public void setThinkingLevel(String level) {
-        if (level == null || level.isEmpty()) {
-            level = DEFAULT_THINKING;
-        }
-        // "minimal solo para flash lite"
-        if (THINKING_MINIMAL.equals(level) && !MODEL_35_FLASH_LITE.equals(getModel())) {
-            level = THINKING_HIGH;
-        }
-        prefs.edit().putString(KEY_THINKING_LEVEL, level).apply();
+        String validLevel = normalizeThinkingLevel(level, getModel());
+        prefs.edit().putString(KEY_THINKING_LEVEL, validLevel).apply();
+    }
+
+    public static String getModelDisplayName(String model) {
+        return MODEL_35_FLASH_LITE.equals(model) ? "3.5 Flash Lite" : "3.8 Flash";
+    }
+
+    public static String formatModelLabel(String model, String level) {
+        String modelName = getModelDisplayName(model);
+        String safeLevel = (level != null && !level.isEmpty()) ? level : DEFAULT_THINKING;
+        String capitalizedLevel = safeLevel.substring(0, 1).toUpperCase() + safeLevel.substring(1);
+        return modelName + " (" + capitalizedLevel + ")";
     }
 
     public String getFormattedModelLabel() {
-        String modelName = MODEL_35_FLASH_LITE.equals(getModel()) ? "Gemini 3.5 Flash Lite" : "Gemini 3.8 Flash";
-        String level = getThinkingLevel();
-        String capitalizedLevel = level.substring(0, 1).toUpperCase() + level.substring(1);
-        return modelName + " (" + capitalizedLevel + ")";
+        return formatModelLabel(getModel(), getThinkingLevel());
     }
 }

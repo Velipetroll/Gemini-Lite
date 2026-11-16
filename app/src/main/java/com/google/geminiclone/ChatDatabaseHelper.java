@@ -13,7 +13,7 @@ import java.util.UUID;
 public class ChatDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "gemini_chats.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     // Tables
     private static final String TABLE_CHATS = "chats";
@@ -36,6 +36,7 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
     private static final String COL_MSG_ATTACH_URI = "attachment_uri";
     private static final String COL_MSG_ATTACH_MIME = "attachment_mime";
     private static final String COL_MSG_ATTACH_NAME = "attachment_name";
+    private static final String COL_MSG_SOURCES_JSON = "sources_json";
 
     public ChatDatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -60,6 +61,7 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
                 + COL_MSG_ATTACH_URI + " TEXT, "
                 + COL_MSG_ATTACH_MIME + " TEXT, "
                 + COL_MSG_ATTACH_NAME + " TEXT, "
+                + COL_MSG_SOURCES_JSON + " TEXT, "
                 + "FOREIGN KEY(" + COL_MSG_CHAT_ID + ") REFERENCES " + TABLE_CHATS + "(" + COL_CHAT_ID + ") ON DELETE CASCADE);");
     }
 
@@ -69,6 +71,9 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
             try { db.execSQL("ALTER TABLE " + TABLE_MESSAGES + " ADD COLUMN " + COL_MSG_ATTACH_URI + " TEXT;"); } catch (Exception ignored) {}
             try { db.execSQL("ALTER TABLE " + TABLE_MESSAGES + " ADD COLUMN " + COL_MSG_ATTACH_MIME + " TEXT;"); } catch (Exception ignored) {}
             try { db.execSQL("ALTER TABLE " + TABLE_MESSAGES + " ADD COLUMN " + COL_MSG_ATTACH_NAME + " TEXT;"); } catch (Exception ignored) {}
+        }
+        if (oldVersion < 3) {
+            try { db.execSQL("ALTER TABLE " + TABLE_MESSAGES + " ADD COLUMN " + COL_MSG_SOURCES_JSON + " TEXT;"); } catch (Exception ignored) {}
         }
     }
 
@@ -114,6 +119,7 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
         cv.put(COL_MSG_ATTACH_URI, message.getAttachmentUri());
         cv.put(COL_MSG_ATTACH_MIME, message.getAttachmentMimeType());
         cv.put(COL_MSG_ATTACH_NAME, message.getAttachmentName());
+        cv.put(COL_MSG_SOURCES_JSON, message.getSourcesJson());
 
         db.insert(TABLE_MESSAGES, null, cv);
         touchChat(chatId);
@@ -130,6 +136,43 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
                 + ")";
         db.execSQL(sql, new Object[]{completedText, chatId});
         touchChat(chatId);
+    }
+
+    public void updateMessageAtPosition(String chatId, int messagePosition, String text, String thinkingLevel, String modelName) {
+        if (chatId == null || messagePosition < 0) return;
+        SQLiteDatabase db = getWritableDatabase();
+        String sql = "UPDATE " + TABLE_MESSAGES
+                + " SET " + COL_MSG_TEXT + "=?, " + COL_MSG_THINKING + "=?, " + COL_MSG_MODEL + "=? "
+                + "WHERE " + COL_MSG_ID + " = ("
+                + "  SELECT " + COL_MSG_ID + " FROM " + TABLE_MESSAGES
+                + "  WHERE " + COL_MSG_CHAT_ID + "=? "
+                + "  ORDER BY " + COL_MSG_ID + " ASC LIMIT 1 OFFSET ?"
+                + ")";
+        db.execSQL(sql, new Object[]{
+                text != null ? text : "",
+                thinkingLevel,
+                modelName,
+                chatId,
+                messagePosition
+        });
+        touchChat(chatId);
+    }
+
+    public void updateMessageSourcesAtPosition(String chatId, int messagePosition, String sourcesJson) {
+        if (chatId == null || messagePosition < 0) return;
+        SQLiteDatabase db = getWritableDatabase();
+        String sql = "UPDATE " + TABLE_MESSAGES
+                + " SET " + COL_MSG_SOURCES_JSON + "=? "
+                + "WHERE " + COL_MSG_ID + " = ("
+                + "  SELECT " + COL_MSG_ID + " FROM " + TABLE_MESSAGES
+                + "  WHERE " + COL_MSG_CHAT_ID + "=? "
+                + "  ORDER BY " + COL_MSG_ID + " ASC LIMIT 1 OFFSET ?"
+                + ")";
+        db.execSQL(sql, new Object[]{
+                sourcesJson,
+                chatId,
+                messagePosition
+        });
     }
 
     public List<ChatSession> getAllChats() {
@@ -159,6 +202,7 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
             int idxAttachUri = cursor.getColumnIndex(COL_MSG_ATTACH_URI);
             int idxAttachMime = cursor.getColumnIndex(COL_MSG_ATTACH_MIME);
             int idxAttachName = cursor.getColumnIndex(COL_MSG_ATTACH_NAME);
+            int idxSourcesJson = cursor.getColumnIndex(COL_MSG_SOURCES_JSON);
             while (cursor.moveToNext()) {
                 String text = cursor.getString(cursor.getColumnIndexOrThrow(COL_MSG_TEXT));
                 boolean isUser = cursor.getInt(cursor.getColumnIndexOrThrow(COL_MSG_IS_USER)) == 1;
@@ -171,6 +215,12 @@ public class ChatDatabaseHelper extends SQLiteOpenHelper {
                         msg.setAttachmentUri(attachUri);
                         if (idxAttachMime >= 0) msg.setAttachmentMimeType(cursor.getString(idxAttachMime));
                         if (idxAttachName >= 0) msg.setAttachmentName(cursor.getString(idxAttachName));
+                    }
+                }
+                if (idxSourcesJson >= 0) {
+                    String sourcesJson = cursor.getString(idxSourcesJson);
+                    if (sourcesJson != null && !sourcesJson.isEmpty()) {
+                        msg.setSourcesJson(sourcesJson);
                     }
                 }
                 list.add(msg);

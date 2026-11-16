@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Gemini Lite</string>
     <string name="gemini_title">Gemini Lite</string>
-    <string name="gemini_model_default">Gemini 3.8 Flash (High)</string>
+    <string name="gemini_model_default">3.5 Flash Lite (Medium)</string>
     
     <string name="greeting_hola">Hola,</string>
     <string name="greeting_question">¿En qué puedo ayudarte hoy?</string>

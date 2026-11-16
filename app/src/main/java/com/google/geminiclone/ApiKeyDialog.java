@@ -13,12 +13,36 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 public class ApiKeyDialog {
+
+    private static String resolveSelectedModel(RadioButton rbDefault35Lite) {
+        return (rbDefault35Lite != null && rbDefault35Lite.isChecked())
+                ? ApiKeyManager.MODEL_35_FLASH_LITE
+                : ApiKeyManager.MODEL_38_FLASH;
+    }
+
+    private static String resolveSelectedThinking(
+            RadioButton rbHigh,
+            RadioButton rbMedium,
+            RadioButton rbLow,
+            RadioButton rbMinimal,
+            String selectedModel) {
+        if (rbMinimal != null && rbMinimal.isChecked()
+                && ApiKeyManager.MODEL_35_FLASH_LITE.equals(selectedModel)) {
+            return ApiKeyManager.THINKING_MINIMAL;
+        }
+        if (rbHigh != null && rbHigh.isChecked()) return ApiKeyManager.THINKING_HIGH;
+        if (rbLow != null && rbLow.isChecked()) return ApiKeyManager.THINKING_LOW;
+        if (rbMedium != null && rbMedium.isChecked()) return ApiKeyManager.THINKING_MEDIUM;
+        return ApiKeyManager.DEFAULT_THINKING;
+    }
 
     public static void show(Context context, ApiKeyManager keyManager, Runnable onSaved) {
         BottomSheetDialog dialog = new BottomSheetDialog(context, R.style.BottomSheetDialogTheme);
@@ -32,12 +56,58 @@ public class ApiKeyDialog {
         Button btnTest = view.findViewById(R.id.btnTestKey);
         ProgressBar pbTesting = view.findViewById(R.id.pbTesting);
         TextView tvTestStatus = view.findViewById(R.id.tvTestStatus);
+        RadioGroup rgDefaultModel = view.findViewById(R.id.rgDefaultModel);
+        RadioButton rbDefault35Lite = view.findViewById(R.id.rbDefaultModel35Lite);
+        RadioButton rbDefault38Flash = view.findViewById(R.id.rbDefaultModel38Flash);
+        RadioButton rbDefaultHigh = view.findViewById(R.id.rbDefaultThinkingHigh);
+        RadioButton rbDefaultMedium = view.findViewById(R.id.rbDefaultThinkingMedium);
+        RadioButton rbDefaultLow = view.findViewById(R.id.rbDefaultThinkingLow);
+        RadioButton rbDefaultMinimal = view.findViewById(R.id.rbDefaultThinkingMinimal);
         androidx.appcompat.widget.SwitchCompat switchWebSearch = view.findViewById(R.id.switchWebSearch);
         View rowWebSearchToggle = view.findViewById(R.id.rowWebSearchToggle);
         EditText etSystemPrompt = view.findViewById(R.id.etSystemPromptInput);
         Button btnSave = view.findViewById(R.id.btnSaveSettings);
 
         etApiKey.setText(keyManager.getApiKey());
+
+        // Populate default model and thinking level
+        String currentDefaultModel = keyManager.getDefaultModel();
+        boolean isDefault35Lite = ApiKeyManager.MODEL_35_FLASH_LITE.equals(currentDefaultModel);
+        if (rbDefault35Lite != null && rbDefault38Flash != null) {
+            if (isDefault35Lite) {
+                rbDefault35Lite.setChecked(true);
+            } else {
+                rbDefault38Flash.setChecked(true);
+            }
+        }
+        if (rbDefaultMinimal != null) {
+            rbDefaultMinimal.setVisibility(isDefault35Lite ? View.VISIBLE : View.GONE);
+        }
+
+        String currentDefaultThinking = keyManager.getDefaultThinkingLevel();
+        if (ApiKeyManager.THINKING_MINIMAL.equals(currentDefaultThinking) && isDefault35Lite && rbDefaultMinimal != null) {
+            rbDefaultMinimal.setChecked(true);
+        } else if (ApiKeyManager.THINKING_HIGH.equals(currentDefaultThinking) && rbDefaultHigh != null) {
+            rbDefaultHigh.setChecked(true);
+        } else if (ApiKeyManager.THINKING_LOW.equals(currentDefaultThinking) && rbDefaultLow != null) {
+            rbDefaultLow.setChecked(true);
+        } else if (rbDefaultMedium != null) {
+            rbDefaultMedium.setChecked(true);
+        }
+
+        if (rgDefaultModel != null && rbDefaultMinimal != null) {
+            rgDefaultModel.setOnCheckedChangeListener((group, checkedId) -> {
+                if (checkedId == R.id.rbDefaultModel35Lite) {
+                    rbDefaultMinimal.setVisibility(View.VISIBLE);
+                } else {
+                    rbDefaultMinimal.setVisibility(View.GONE);
+                    if (rbDefaultMinimal.isChecked() && rbDefaultMedium != null) {
+                        rbDefaultMedium.setChecked(true);
+                    }
+                }
+            });
+        }
+
         if (switchWebSearch != null) {
             switchWebSearch.setChecked(keyManager.isWebSearchEnabled());
         }
@@ -93,19 +163,14 @@ public class ApiKeyDialog {
                 return;
             }
 
-            if (!GeminiNative.validateApiKey(key)) {
-                tvTestStatus.setText("Formato de clave inválido (debe comenzar con AIzaSy)");
-                tvTestStatus.setTextColor(Color.parseColor("#EA4335"));
-                return;
-            }
-
             pbTesting.setVisibility(View.VISIBLE);
             tvTestStatus.setText("Probando conexión con Google AI...");
             tvTestStatus.setTextColor(Color.parseColor("#59C0F0"));
             btnTest.setEnabled(false);
 
-            String selectedModel = keyManager.getModel();
-            String selectedThinking = keyManager.getThinkingLevel();
+            String selectedModel = resolveSelectedModel(rbDefault35Lite);
+            String selectedThinking = resolveSelectedThinking(
+                    rbDefaultHigh, rbDefaultMedium, rbDefaultLow, rbDefaultMinimal, selectedModel);
 
             new GeminiApiClient().testConnection(key, selectedModel, selectedThinking, new GeminiApiClient.ApiCallback() {
                 @Override
@@ -128,6 +193,10 @@ public class ApiKeyDialog {
 
         btnSave.setOnClickListener(v -> {
             keyManager.setApiKey(etApiKey.getText().toString().trim());
+            String selectedModel = resolveSelectedModel(rbDefault35Lite);
+            String selectedThinking = resolveSelectedThinking(
+                    rbDefaultHigh, rbDefaultMedium, rbDefaultLow, rbDefaultMinimal, selectedModel);
+            keyManager.setDefaultModelAndThinking(selectedModel, selectedThinking);
             if (switchWebSearch != null) {
                 keyManager.setWebSearchEnabled(switchWebSearch.isChecked());
             }

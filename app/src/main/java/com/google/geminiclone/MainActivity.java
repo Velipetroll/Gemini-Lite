@@ -100,27 +100,39 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
     private ActivityResultLauncher<String> audioPermissionLauncher;
 
     private boolean isGenerating = false;
+    private int activeGeneratingPosition = -1;
     private final Handler typewriterHandler = new Handler(Looper.getMainLooper());
     private Runnable currentTypewriterRunnable;
+    private android.view.GestureDetector swipeDrawerDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
         // Edge-to-edge full screen extending under notch cutout and nav bar
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            getWindow().getAttributes().layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
             getWindow().getAttributes().layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
-
-        setContentView(R.layout.activity_main);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            getWindow().setStatusBarContrastEnforced(false);
+            getWindow().setNavigationBarContrastEnforced(false);
+        }
 
         apiKeyManager = new ApiKeyManager(this);
+        if (savedInstanceState == null) {
+            apiKeyManager.applyDefaultModel();
+        }
         apiClient = new GeminiApiClient();
         dbHelper = new ChatDatabaseHelper(this);
         WebSearchEngine.init(this);
 
+        setupSwipeDrawerDetector();
         setupFilePicker();
         setupCameraLauncher();
         setupSpeechRecognizer();
@@ -130,6 +142,33 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         setupListeners();
         updateStatusBadge();
         handleIncomingIntent(getIntent());
+    }
+
+    private void setupSwipeDrawerDetector() {
+        final float minSwipePx = 72f * getResources().getDisplayMetrics().density;
+        swipeDrawerDetector = new android.view.GestureDetector(this, new android.view.GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onFling(android.view.MotionEvent e1, android.view.MotionEvent e2, float velocityX, float velocityY) {
+                if (e1 != null && e2 != null && drawerLayout != null
+                        && !drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    float diffX = e2.getX() - e1.getX();
+                    float diffY = e2.getY() - e1.getY();
+                    if (diffX > minSwipePx && Math.abs(diffX) > Math.abs(diffY) * 1.6f && velocityX > 300f) {
+                        drawerLayout.openDrawer(GravityCompat.START);
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
+        if (swipeDrawerDetector != null) {
+            swipeDrawerDetector.onTouchEvent(ev);
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override
@@ -321,6 +360,15 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         View navDrawer = findViewById(R.id.navigationDrawer);
         final int topBarInitialTop = (topBar != null) ? topBar.getPaddingTop() : 0;
 
+        // Keep VRI/HWUI dirty bounds anchored at y=0 from the first frame so sliding overlays
+        // (navigationDrawer and DrawerLayout scrim) are not clipped at topBar's first visible child
+        if (uiContainer instanceof ViewGroup) {
+            View topEdgeAnchor = new View(this);
+            topEdgeAnchor.setBackgroundColor(0x01000000);
+            ((ViewGroup) uiContainer).addView(topEdgeAnchor,
+                    new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        }
+
         if (uiContainer != null) {
             androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(uiContainer, (v, insets) -> {
                 androidx.core.graphics.Insets topInsets = insets.getInsets(
@@ -347,7 +395,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
                 v.setPadding(v.getPaddingLeft(), 0, v.getPaddingRight(), bottomInset);
 
                 if (navDrawer != null) {
-                    navDrawer.setPadding(0, topInsets.top, 0, navInsets.bottom);
+                    navDrawer.setPadding(topInsets.left, topInsets.top, 0, navInsets.bottom);
                 }
 
                 return insets;
@@ -358,7 +406,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
     private void setupRecyclerView() {
         chatAdapter = new ChatAdapter(this, chatMessages, this);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        layoutManager.setStackFromEnd(true);
+        layoutManager.setStackFromEnd(false);
         rvChatMessages.setLayoutManager(layoutManager);
         rvChatMessages.setHasFixedSize(true);
         rvChatMessages.setItemViewCacheSize(12);
@@ -368,6 +416,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
 
     private void setupDrawer() {
         drawerLayout = findViewById(R.id.drawerLayout);
+        drawerLayout.setStatusBarBackground(null);
         rvChatHistory = findViewById(R.id.rvChatHistory);
         tvEmptyHistory = findViewById(R.id.tvEmptyHistory);
 
@@ -422,7 +471,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
 
         findViewById(R.id.btnDrawerSettings).setOnClickListener(v -> {
             drawerLayout.closeDrawer(GravityCompat.START);
-            ApiKeyDialog.show(this, apiKeyManager, this::updateStatusBadge);
+            ApiKeyDialog.show(this, apiKeyManager, () -> { updateStatusBadge(); updateModelNameDisplay(); });
         });
 
         loadChatSessions();
@@ -485,6 +534,18 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
 
         // Mic button
         findViewById(R.id.btnMic).setOnClickListener(v -> startVoiceInput());
+
+        // Tapping anywhere in the visible input pill opens the keyboard
+        View inputPill = findViewById(R.id.inputPillContainer);
+        if (inputPill != null) {
+            inputPill.setOnClickListener(v -> {
+                etPromptInput.requestFocus();
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.showSoftInput(etPromptInput, InputMethodManager.SHOW_IMPLICIT);
+                }
+            });
+        }
 
         // Suggestion Cards
         setupSuggestionCard(findViewById(R.id.cardSuggestion1), getString(R.string.suggestion_1_prompt));
@@ -796,26 +857,41 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         }
     }
 
+    private String[] readAttachmentPayload(Uri uri, String rawMimeHint, String displayName) {
+        if (uri == null) return null;
+        try (InputStream is = getContentResolver().openInputStream(uri);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            if (is == null) return null;
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = is.read(buf)) != -1) {
+                baos.write(buf, 0, len);
+            }
+            byte[] bytes = baos.toByteArray();
+            if (bytes.length > 0) {
+                String base64 = Base64.encodeToString(bytes, Base64.NO_WRAP);
+                String mime = resolveMimeType(rawMimeHint, displayName, bytes);
+                return new String[]{base64, mime};
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
     private void ensureActiveChatAttachmentLoaded(int upToIndex) {
         if (activeChatAttachmentBase64 != null) return;
         for (int i = upToIndex - 1; i >= 0; i--) {
             ChatMessage m = chatMessages.get(i);
             if (m.hasAttachment() && m.getAttachmentUri() != null) {
-                try (InputStream is = getContentResolver().openInputStream(Uri.parse(m.getAttachmentUri()));
-                     ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                    if (is == null) continue;
-                    byte[] buf = new byte[8192];
-                    int len;
-                    while ((len = is.read(buf)) != -1) {
-                        baos.write(buf, 0, len);
-                    }
-                    byte[] bytes = baos.toByteArray();
-                    if (bytes.length > 0) {
-                        activeChatAttachmentBase64 = Base64.encodeToString(bytes, Base64.NO_WRAP);
-                        activeChatAttachmentMime = resolveMimeType(m.getAttachmentMimeType(), m.getAttachmentName(), bytes);
-                        return;
-                    }
-                } catch (Exception ignored) {
+                String[] payload = readAttachmentPayload(
+                        Uri.parse(m.getAttachmentUri()),
+                        m.getAttachmentMimeType(),
+                        m.getAttachmentName()
+                );
+                if (payload != null) {
+                    activeChatAttachmentBase64 = payload[0];
+                    activeChatAttachmentMime = payload[1];
+                    return;
                 }
             }
         }
@@ -853,7 +929,7 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
 
         if (!apiKeyManager.hasApiKey()) {
             Toast.makeText(this, "Por favor configura tu API Key primero", Toast.LENGTH_LONG).show();
-            ApiKeyDialog.show(this, apiKeyManager, this::updateStatusBadge);
+            ApiKeyDialog.show(this, apiKeyManager, () -> { updateStatusBadge(); updateModelNameDisplay(); });
             return;
         }
 
@@ -904,13 +980,12 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         }
         chatMessages.add(userMessage);
         chatAdapter.notifyItemInserted(chatMessages.size() - 1);
-        rvChatMessages.smoothScrollToPosition(chatMessages.size() - 1);
         dbHelper.saveMessage(currentChatId, userMessage);
 
         // Add Gemini generating placeholder message
         String model = apiKeyManager.getModel();
         String thinkingLevel = apiKeyManager.getThinkingLevel();
-        String modelLabel = ApiKeyManager.MODEL_35_FLASH_LITE.equals(model) ? "Gemini 3.5 Flash Lite" : "Gemini 3.8 Flash";
+        String modelLabel = ApiKeyManager.getModelDisplayName(model);
 
         ChatMessage geminiPlaceholder = new ChatMessage("", false, true, thinkingLevel, modelLabel);
         chatMessages.add(geminiPlaceholder);
@@ -919,44 +994,90 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         rvChatMessages.smoothScrollToPosition(geminiPos);
         dbHelper.saveMessage(currentChatId, geminiPlaceholder);
 
-        // Switch to Stop button
-        setGeneratingState(true);
+        String effectiveBase64 = (attachedBase64 != null) ? attachedBase64 : activeChatAttachmentBase64;
+        String effectiveMime = (attachedBase64 != null) ? attachedMime : activeChatAttachmentMime;
 
-        // Send API request via C++ backend (multimodal or text)
+        sendGeminiRequestForMessage(geminiPos, contextualPrompt, effectiveBase64, effectiveMime, model, thinkingLevel, modelLabel);
+    }
+
+    private void sendGeminiRequestForMessage(
+            int geminiPos,
+            String contextualPrompt,
+            String base64Data,
+            String mimeType,
+            String model,
+            String thinkingLevel,
+            String modelLabel) {
+        activeGeneratingPosition = geminiPos;
+        setGeneratingState(true);
+        if (geminiPos >= 0 && geminiPos < chatMessages.size()) {
+            chatMessages.get(geminiPos).setSourcesJson(null);
+        }
+        if (currentChatId != null) {
+            dbHelper.updateMessageSourcesAtPosition(currentChatId, geminiPos, null);
+        }
+        final long requestStartMs = System.currentTimeMillis();
+
         String apiKey = apiKeyManager.getApiKey();
         String systemInstruction = DeviceActionExecutor.buildFullSystemInstruction(this, apiKeyManager.getSystemPrompt());
         boolean enableWebSearch = apiKeyManager.isWebSearchEnabled();
 
         GeminiApiClient.ApiCallback callback = new GeminiApiClient.ApiCallback() {
             @Override
+            public void onSourcesReady(String sourcesJson) {
+                if (geminiPos >= 0 && geminiPos < chatMessages.size()) {
+                    chatMessages.get(geminiPos).setSourcesJson(sourcesJson);
+                }
+                if (currentChatId != null) {
+                    dbHelper.updateMessageSourcesAtPosition(currentChatId, geminiPos, sourcesJson);
+                }
+            }
+
+            @Override
+            public void onStatusUpdate(String statusText) {
+                if (geminiPos >= 0 && geminiPos < chatMessages.size()) {
+                    chatMessages.get(geminiPos).setStatusLabel(statusText);
+                    chatAdapter.notifyItemChanged(geminiPos, ChatAdapter.PAYLOAD_TEXT_STREAM);
+                }
+            }
+
+            @Override
             public void onSuccess(String responseText) {
+                if (geminiPos < 0 || geminiPos >= chatMessages.size()) {
+                    setGeneratingState(false);
+                    return;
+                }
+                chatMessages.get(geminiPos).setStatusLabel(
+                        ChatMessage.formatThinkingDuration(System.currentTimeMillis() - requestStartMs));
                 String cleanText = DeviceActionExecutor.processAndExecuteActions(MainActivity.this, responseText);
-                streamTypewriterResponse(geminiPos, cleanText);
+                streamTypewriterResponse(geminiPos, cleanText, thinkingLevel, modelLabel);
             }
 
             @Override
             public void onError(String errorMessage) {
                 setGeneratingState(false);
-                geminiPlaceholder.setGenerating(false);
-                geminiPlaceholder.setText(errorMessage);
-                chatAdapter.notifyItemChanged(geminiPos);
-                if (currentChatId != null) {
-                    dbHelper.updateLastGeminiMessage(currentChatId, errorMessage);
+                activeGeneratingPosition = -1;
+                if (geminiPos >= 0 && geminiPos < chatMessages.size()) {
+                    ChatMessage placeholder = chatMessages.get(geminiPos);
+                    placeholder.setGenerating(false);
+                    placeholder.setStatusLabel(null);
+                    placeholder.setText(errorMessage);
+                    chatAdapter.notifyItemChanged(geminiPos);
+                    if (currentChatId != null) {
+                        dbHelper.updateMessageAtPosition(currentChatId, geminiPos, errorMessage, thinkingLevel, modelLabel);
+                    }
                 }
             }
         };
 
-        String effectiveBase64 = (attachedBase64 != null) ? attachedBase64 : activeChatAttachmentBase64;
-        String effectiveMime = (attachedBase64 != null) ? attachedMime : activeChatAttachmentMime;
-
-        if (effectiveBase64 != null) {
-            apiClient.sendPromptWithFile(apiKey, model, thinkingLevel, contextualPrompt, effectiveMime, effectiveBase64, systemInstruction, enableWebSearch, callback);
+        if (base64Data != null && mimeType != null) {
+            apiClient.sendPromptWithFile(apiKey, model, thinkingLevel, contextualPrompt, mimeType, base64Data, systemInstruction, enableWebSearch, callback);
         } else {
             apiClient.sendPrompt(apiKey, model, thinkingLevel, contextualPrompt, systemInstruction, enableWebSearch, callback);
         }
     }
 
-    private void streamTypewriterResponse(int position, String fullText) {
+    private void streamTypewriterResponse(int position, String fullText, String thinkingLevel, String modelLabel) {
         ChatMessage msg = chatMessages.get(position);
 
         final int length = fullText.length();
@@ -969,21 +1090,20 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
                 if (index[0] < length) {
                     index[0] = Math.min(length, index[0] + step);
                     msg.setText(fullText.substring(0, index[0]));
-                    // Partial payload update: no view re-inflation or cross-fade
+                    // Partial payload update: keep current viewport position completely still while streaming
                     chatAdapter.notifyItemChanged(position, ChatAdapter.PAYLOAD_TEXT_STREAM);
-                    rvChatMessages.scrollToPosition(position);
                     typewriterHandler.postDelayed(this, 20);
                 } else {
                     msg.setText(fullText);
                     msg.setGenerating(false);
-                    // Full update when complete to render markdown and reveal action buttons
+                    // Full update when complete to render markdown and reveal action buttons without jumping scroll
                     chatAdapter.notifyItemChanged(position);
-                    rvChatMessages.scrollToPosition(position);
+                    activeGeneratingPosition = -1;
                     setGeneratingState(false);
 
                     // Persist completed Gemini response in local SQLite database
                     if (currentChatId != null) {
-                        dbHelper.updateLastGeminiMessage(currentChatId, fullText);
+                        dbHelper.updateMessageAtPosition(currentChatId, position, fullText, thinkingLevel, modelLabel);
                         loadChatSessions(); // Update recent timestamp and ordering
                     }
                 }
@@ -995,17 +1115,22 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
     private void cancelCurrentGeneration() {
         if (currentTypewriterRunnable != null) {
             typewriterHandler.removeCallbacks(currentTypewriterRunnable);
+            currentTypewriterRunnable = null;
         }
+        int targetPos = (activeGeneratingPosition >= 0 && activeGeneratingPosition < chatMessages.size())
+                ? activeGeneratingPosition
+                : chatMessages.size() - 1;
+        activeGeneratingPosition = -1;
         setGeneratingState(false);
-        if (!chatMessages.isEmpty()) {
-            ChatMessage last = chatMessages.get(chatMessages.size() - 1);
-            if (last.isGenerating()) {
-                last.setGenerating(false);
-                String stoppedText = last.getText() + " (Generación detenida)";
-                last.setText(stoppedText);
-                chatAdapter.notifyItemChanged(chatMessages.size() - 1);
+        if (targetPos >= 0 && targetPos < chatMessages.size()) {
+            ChatMessage target = chatMessages.get(targetPos);
+            if (target.isGenerating()) {
+                target.setGenerating(false);
+                String stoppedText = target.getText() + " (Generación detenida)";
+                target.setText(stoppedText);
+                chatAdapter.notifyItemChanged(targetPos);
                 if (currentChatId != null) {
-                    dbHelper.updateLastGeminiMessage(currentChatId, stoppedText);
+                    dbHelper.updateMessageAtPosition(currentChatId, targetPos, stoppedText, target.getThinkingLevel(), target.getModelName());
                 }
             }
         }
@@ -1065,16 +1190,64 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
 
     @Override
     public void onRegenerate(int position) {
-        // Find preceding user prompt
-        if (position > 0 && chatMessages.get(position - 1).isUser()) {
-            ChatMessage userMsg = chatMessages.get(position - 1);
-            if (userMsg.hasAttachment() && userMsg.getAttachmentUri() != null) {
-                handleSelectedFile(Uri.parse(userMsg.getAttachmentUri()));
-            }
-            String prompt = userMsg.getText();
-            etPromptInput.setText(prompt);
-            handleSendPrompt();
+        if (isGenerating) return;
+        if (position <= 0 || position >= chatMessages.size()) return;
+
+        // Locate preceding user prompt and replace the target Gemini response in-place
+        int userIndex = position - 1;
+        while (userIndex >= 0 && !chatMessages.get(userIndex).isUser()) {
+            userIndex--;
         }
+        if (userIndex < 0) return;
+
+        if (!apiKeyManager.hasApiKey()) {
+            Toast.makeText(this, "Por favor configura tu API Key primero", Toast.LENGTH_LONG).show();
+            ApiKeyDialog.show(this, apiKeyManager, () -> { updateStatusBadge(); updateModelNameDisplay(); });
+            return;
+        }
+
+        ChatMessage userMsg = chatMessages.get(userIndex);
+        String prompt = (userMsg.getText() != null) ? userMsg.getText() : "";
+
+        String attachedBase64 = null;
+        String attachedMime = null;
+        if (userMsg.hasAttachment() && userMsg.getAttachmentUri() != null) {
+            String[] payload = readAttachmentPayload(
+                    Uri.parse(userMsg.getAttachmentUri()),
+                    userMsg.getAttachmentMimeType(),
+                    userMsg.getAttachmentName()
+            );
+            if (payload != null) {
+                attachedBase64 = payload[0];
+                attachedMime = payload[1];
+            }
+        } else {
+            ensureActiveChatAttachmentLoaded(userIndex);
+            attachedBase64 = activeChatAttachmentBase64;
+            attachedMime = activeChatAttachmentMime;
+        }
+
+        String contextualPrompt = (attachedBase64 != null && userIndex == 0)
+                ? prompt
+                : buildContextualPrompt(prompt, userIndex);
+
+        String model = apiKeyManager.getModel();
+        String thinkingLevel = apiKeyManager.getThinkingLevel();
+        String modelLabel = ApiKeyManager.getModelDisplayName(model);
+
+        ChatMessage targetResponse = chatMessages.get(position);
+        targetResponse.setText("");
+        targetResponse.setGenerating(true);
+        targetResponse.setStatusLabel(null);
+        targetResponse.setThinkingLevel(thinkingLevel);
+        targetResponse.setModelName(modelLabel);
+        chatAdapter.notifyItemChanged(position);
+
+        if (currentChatId != null) {
+            dbHelper.updateMessageAtPosition(currentChatId, position, "", thinkingLevel, modelLabel);
+        }
+
+        sendGeminiRequestForMessage(position, contextualPrompt, attachedBase64, attachedMime, model, thinkingLevel, modelLabel);
     }
 
     private void updateModelNameDisplay() {
@@ -1117,6 +1290,14 @@ public class MainActivity extends AppCompatActivity implements ChatAdapter.OnCha
         super.onPause();
         if (glSurfaceView != null) {
             glSurfaceView.onPause();
+        }
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (level >= TRIM_MEMORY_UI_HIDDEN) {
+            WebSearchEngine.trim();
         }
     }
 }

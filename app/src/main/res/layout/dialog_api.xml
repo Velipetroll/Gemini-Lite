@@ -1,19 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
     android:background="@drawable/bg_dialog_sheet"
-    android:padding="24dp">
+    android:overScrollMode="never">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="20dp"
+    android:paddingTop="18dp"
+    android:paddingBottom="32dp">
 
     <!-- Bottom sheet drag handle indicator -->
     <View
         android:layout_width="36dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="12dp"
         android:background="@drawable/bg_chip_pill"
         android:backgroundTint="@color/gemini_outline" />
 
@@ -82,7 +89,7 @@
         android:text="@string/link_get_api_key"
         android:textColor="@color/gemini_cyan"
         android:textSize="12sp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:clickable="true"
         android:focusable="true" />
 
@@ -92,7 +99,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="14dp">
+        android:layout_marginTop="10dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTestKey"
@@ -122,6 +129,123 @@
             android:textSize="12sp"
             android:maxLines="2"
             android:ellipsize="end" />
+    </LinearLayout>
+
+    <!-- Default Model & Thinking Level Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Modelo predeterminado"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="6dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_suggestion_card"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:id="@+id/tvDefaultModelHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Se usa al iniciar la app y en el Asistente"
+            android:textColor="@color/text_hint"
+            android:textSize="11sp"
+            android:layout_marginBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/rgDefaultModel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbDefaultModel35Lite"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="3.5 Flash Lite"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                app:buttonTint="@color/gemini_blue" />
+
+            <RadioButton
+                android:id="@+id/rbDefaultModel38Flash"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="3.8 Flash"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                app:buttonTint="@color/gemini_blue" />
+        </RadioGroup>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="4dp"
+            android:background="@color/gemini_outline" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nivel de pensamiento"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginBottom="2dp" />
+
+        <RadioGroup
+            android:id="@+id/rgDefaultThinking"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbDefaultThinkingHigh"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.95"
+                android:text="High"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                app:buttonTint="@color/gemini_blue" />
+
+            <RadioButton
+                android:id="@+id/rbDefaultThinkingMedium"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.25"
+                android:text="Medium"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                app:buttonTint="@color/gemini_blue" />
+
+            <RadioButton
+                android:id="@+id/rbDefaultThinkingLow"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.80"
+                android:text="Low"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                app:buttonTint="@color/gemini_blue" />
+
+            <RadioButton
+                android:id="@+id/rbDefaultThinkingMinimal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.10"
+                android:text="Minimal"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                app:buttonTint="@color/gemini_blue" />
+        </RadioGroup>
     </LinearLayout>
 
     <!-- Web Search Grounding Switch -->
@@ -209,3 +333,4 @@
         android:layout_marginTop="16dp" />
 
 </LinearLayout>
+</ScrollView>
